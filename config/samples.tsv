@@ -1,0 +1,4 @@
+sample	R1	R2	contigs
+uneven_coverage1	/home/carsonjm/tool_tests/inputs/phide_piper_test/uneven_coverage1_R1.fastq.gz	/home/carsonjm/tool_tests/inputs/phide_piper_test/uneven_coverage1_R2.fastq.gz	
+uneven_coverage2	/home/carsonjm/tool_tests/inputs/phide_piper_test/uneven_coverage2_R1.fastq.gz	/home/carsonjm/tool_tests/inputs/phide_piper_test/uneven_coverage2_R2.fastq.gz	
+uniform_coverage	/home/carsonjm/tool_tests/inputs/phide_piper_test/uniform_coverage_R1.fastq.gz	/home/carsonjm/tool_tests/inputs/phide_piper_test/uniform_coverage_R2.fastq.gz	

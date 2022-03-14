@@ -1,0 +1,7 @@
+HoffLab MGX pipeline goals
+
+1. Add clumpify
+2. Add kneaddata
+3. Add metaphlan
+4. Add metalaffa
+5. Add custom configuration options

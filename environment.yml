@@ -1,0 +1,16 @@
+# name of conda environment
+name: HoffLab_MGX
+
+# channel to download dependencies from
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+# core packages required to run the workflow
+dependencies:
+  - mamba=0.17.0
+  - snakemake=6.10.0
+  - snakefmt=0.4.4
+  - snakedeploy=0.3.0
+  - git=2.34.1
