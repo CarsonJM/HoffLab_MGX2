@@ -1,46 +1,39 @@
 # -------------------------------------
-# Read preprocessing (only runs if config['input_type'] == "reads")
+# Read Preprocessing Module
 # -------------------------------------
 import pandas as pd
 import os
 
-
 # Load sample information and validate
 configfile: "config/config.yaml"
-
-
 samples_df = pd.read_csv(config["sample_info"]["sample_list_path"], sep="\t")
 
 # get current working directory so absolute paths can be used for input/output files
 results = os.getcwd()
 
-
 # load report
 report: "report/workflow.rst"
-
 
 # load resources folder path
 resources = config["resources_path"]
 
 # load sample information to be used in workflow
-samples = samples_df["sample"]
+samples = list(set(samples_df["sample"]))
 R1_files = samples_df["R1"]
 R2_files = samples_df["R2"]
-contig_files = samples_df["contigs"]
 
 # -------------------------------------
-# Read preprocessing rules
+# Read Preprocessing Rules
 # -------------------------------------
-
-
-# create a system link for input reads (makes downstream processing much easier)
-rule link_reads:
+### Set Up Workflow ###
+# merge samples from the same sample and store in desired location
+rule merge_sample_files:
     input:
         R1=expand("{R1}", R1=R1_files),
         R2=expand("{R2}", R2=R2_files),
     output:
-        R1=results + "/00_INPUT_DATA/01_reads/{sample}_R1.fastq.gz",
-        R2=results + "/00_INPUT_DATA/01_reads/{sample}_R2.fastq.gz",
+        R1=results + "/00_INPUT_DATA/01_reads/{sample}_merged_R1.fastq.gz",
+        R2=results + "/00_INPUT_DATA/01_reads/{sample}_merged_R2.fastq.gz",
     params:
         R1=lambda wildcards: samples_df[samples_df["sample"] == wildcards.sample].iloc[
             0
@@ -50,11 +43,38 @@ rule link_reads:
         ]["R2"],
     shell:
         """
-        ln -s {params.R1} {output.R1}
-        ln -s {params.R2} {output.R2}
+        # merge files from the same sample
+        zcat {params.R1} > {output.R1}
+        zcat {params.R2} > {params.R2}
         """
 
+### Deduplicate Reads Using Clumpify ###
+rule clumpify:
+    input:
+        R1=results + "/00_INPUT_DATA/01_reads/{sample}_merged_R1.fastq.gz",
+        R2=results + "/00_INPUT_DATA/01_reads/{sample}_merged_R2.fastq.gz",
+    output:
+        R1=results + "/01_READ_PREPROCCESSING/01_clumpify/{sample}_merged_R1.fastq.gz",
+        R2=results + "/01_READ_PREPROCCESSING/01_clumpify/{sample}_merged_R2.fastq.gz",
+    params:
+        extra_args=config['clumpify']['extra_args'],
+    threads: 1
+    conda:
+        "../envs/clumpify.yml"
+    shell:
+        """
+        # run clumpify
+        clumpify.sh \
+        in={input.R1} \
+        in2={input.R2} \
+        out={output.R1} \
+        out2={output.R2} \
+        dedupe=t \
+        optical=t spany=t adjacent=t \
+        {params.extra_args}
+        """
 
+### Quality Filter Reads Using KneadData ###
 # build kneaddata bowtie2 database
 rule build_kneaddata_database:
     output:

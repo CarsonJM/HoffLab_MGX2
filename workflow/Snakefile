@@ -4,7 +4,6 @@
 import pandas as pd
 import os
 
-
 # Load sample information and validate
 configfile: "config/config.yaml"
 samples_df = pd.read_csv(config["sample_info"]["sample_list_path"], sep="\t")
@@ -12,16 +11,14 @@ samples_df = pd.read_csv(config["sample_info"]["sample_list_path"], sep="\t")
 # get current working directory so absolute paths can be used for input/output files
 results = os.getcwd()
 
-
 # load report
 report: "report/workflow.rst"
-
 
 # load resources folder path
 resources = config["resources_path"]
 
 # load sample information to be used in workflow
-samples = samples_df["sample"]
+samples = list(set(samples_df["sample"]))
 R1_files = samples_df["R1"]
 R2_files = samples_df["R2"]
 

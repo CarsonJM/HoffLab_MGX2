@@ -20,10 +20,18 @@ resources_path: "/home/carsonjm/tool_tests/resources/"
 #------------------------------------
 # Rule customization
 #------------------------------------
-### read_preprocessing ###
-# kneaddata arguments
+### Read Preprocessing ###
+# 1. deduplicate reads using clumpify
+clumpify:
+  extra_args:
+
+# 2. kneaddata arguments
 kneaddata:
   # extra kneaddata arguments? (input as a string)
-  extra_arguments: "--remove-intermediate-output --verbose --trimmomatic $CONDA_PREFIX/share/trimmomatic-0.39-2"
+  extra_args: "--remove-intermediate-output --verbose --trimmomatic $CONDA_PREFIX/share/trimmomatic-0.39-2"
 
+
+### Read-Based Taxonomy ###
+
+### Read-Based Functional Analysis ###
 
