@@ -18,10 +18,9 @@ report: "report/workflow.rst"
 resources = config["resources_path"]
 
 # load sample information to be used in workflow
-samples = list(set(samples_df["sample"]))
-R1_files = samples_df["R1"]
-R2_files = samples_df["R2"]
-
+samples = samples_df["sample"]
+samples_assemblies_replicates=samples_df["sample"].astype("string") + "_" + samples_df["assembly"].astype("string") + "_" + samples_df["replicate"].astype("string")
+samples_assemblies=samples_df["sample"].astype("string") + "_" + samples_df["assembly"].astype("string")
 
 # -------------------------------------
 # modularization: rules to include
@@ -34,4 +33,5 @@ include: "rules/01_read_preprocessing.smk"
 # -------------------------------------
 rule all:
     input:
-        
+        expand(results + "/00_INPUT_DATA/01_reads/{sample_assembly_replicate}_R1.fastq.gz", sample_assembly_replicate=samples_assemblies_replicates),
+        expand(results + "/01_READ_PREPROCESSING/04_read_counts/{sample_assembly}_read_counts.csv", sample_assembly=samples_assemblies),

@@ -39,6 +39,12 @@
 
 ## 7. Modify the sample.tsv file so that it matches the desired sample names and paths
 
+- the "sample" column should reflect the patient & timepoint of the sample
+- the "replicate" column is included so that multiple runs from the same sample can be merged
+(i.e. "sample" 1 "replicate" 1 will be merged with "sample" 1 "replicate" 2)
+- the "assembly" column should reflect samples that you want to be co-assembled together
+(i.e. "sample" 1 "assembly" 1 will be co-assembled with "sample" 2 "assembly" 1)
+
 ## 8. Run the following command to generate a pdf preview of the workflow
 
 `snakemake --configfile <path to config file> --dag | dot -Tpdf > dag.pdf`

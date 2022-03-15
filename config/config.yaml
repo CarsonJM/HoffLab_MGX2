@@ -3,9 +3,9 @@
 #------------------------------------
 sample_info:
   # path to sample information sheet in TSV format (absolute path)
-  sample_list_path: "/home/carsonjm/tool_tests/phide_piper_test/config/samples.tsv"
+  sample_list_path: "/home/carsonjm/CarsonJM/HoffLab_MGX/config/samples.tsv"
   # name of the study (for metadata)
-  study_name: 'phide_piper_test'
+  study_name: 'HoffLab_MGX_test'
   # information about the ecosystem the sample was obtained from (for metadata)
   sample_ecosystem: "in_silico"
 
@@ -23,11 +23,12 @@ resources_path: "/home/carsonjm/tool_tests/resources/"
 ### Read Preprocessing ###
 # 1. deduplicate reads using clumpify
 clumpify:
-  extra_args:
+  extra_args: ""
 
 # 2. kneaddata arguments
 kneaddata:
   # extra kneaddata arguments? (input as a string)
+  # Note: the path to trimmomatic may change, ensure this matches the executable before running
   extra_args: "--remove-intermediate-output --verbose --trimmomatic $CONDA_PREFIX/share/trimmomatic-0.39-2"
 
 

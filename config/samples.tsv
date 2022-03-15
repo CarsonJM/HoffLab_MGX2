@@ -1,4 +1,4 @@
-sample	R1	R2	contigs
-uneven_coverage1	/home/carsonjm/tool_tests/inputs/phide_piper_test/uneven_coverage1_R1.fastq.gz	/home/carsonjm/tool_tests/inputs/phide_piper_test/uneven_coverage1_R2.fastq.gz	
-uneven_coverage2	/home/carsonjm/tool_tests/inputs/phide_piper_test/uneven_coverage2_R1.fastq.gz	/home/carsonjm/tool_tests/inputs/phide_piper_test/uneven_coverage2_R2.fastq.gz	
-uniform_coverage	/home/carsonjm/tool_tests/inputs/phide_piper_test/uniform_coverage_R1.fastq.gz	/home/carsonjm/tool_tests/inputs/phide_piper_test/uniform_coverage_R2.fastq.gz	
+sample	assembly	replicate	R1	R2
+C10_S69	1	1	/home/carsonjm/tool_tests/inputs/HoffLab_MGX_test/C10_S69_R1_001.fastq.gz	/home/carsonjm/tool_tests/inputs/HoffLab_MGX_test/C10_S69_R2_001.fastq.gz
+C10_S69	1	2	/home/carsonjm/tool_tests/inputs/HoffLab_MGX_test/C11_S70_R1_001.fastq.gz	/home/carsonjm/tool_tests/inputs/HoffLab_MGX_test/C11_S70_R2_001.fastq.gz
+E10_S75	2	1	/home/carsonjm/tool_tests/inputs/HoffLab_MGX_test/E10_S75_R1_001.fastq.gz	/home/carsonjm/tool_tests/inputs/HoffLab_MGX_test/E10_S75_R2_001.fastq.gz
