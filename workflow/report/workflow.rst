@@ -1,1 +1,1 @@
-This workflow identifies putative viruses in metagenomic samples.
+This workflow preprocesses and analyzes metagenomic sequences using standard Hoffman lab protocols.

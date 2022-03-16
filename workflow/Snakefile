@@ -19,13 +19,14 @@ resources = config["resources_path"]
 
 # load sample information to be used in workflow
 samples = samples_df["sample"]
-samples_assemblies_replicates=samples_df["sample"].astype("string") + "_" + samples_df["assembly"].astype("string") + "_" + samples_df["replicate"].astype("string")
-samples_assemblies=samples_df["sample"].astype("string") + "_" + samples_df["assembly"].astype("string")
+samples_assemblies_replicates=list(set(samples_df["sample"].astype("string") + "_" + samples_df["assembly"].astype("string") + "_" + samples_df["replicate"].astype("string")))
+samples_assemblies=list(set(samples_df["sample"].astype("string") + "_" + samples_df["assembly"].astype("string")))
 
 # -------------------------------------
 # modularization: rules to include
 # -------------------------------------
 include: "rules/01_read_preprocessing.smk"
+include: "rules/02_read_based_taxonomy.smk"
 
 
 # -------------------------------------
@@ -34,4 +35,5 @@ include: "rules/01_read_preprocessing.smk"
 rule all:
     input:
         expand(results + "/00_INPUT_DATA/01_reads/{sample_assembly_replicate}_R1.fastq.gz", sample_assembly_replicate=samples_assemblies_replicates),
-        expand(results + "/01_READ_PREPROCESSING/04_read_counts/{sample_assembly}_read_counts.csv", sample_assembly=samples_assemblies),
+        results + "/01_READ_PREPROCESSING/read_preprocessing_figure.png",
+        results+"/02_READ_BASED_TAXONOMY/metaphlan_combined_profiles.txt",

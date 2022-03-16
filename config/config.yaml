@@ -21,18 +21,28 @@ resources_path: "/home/carsonjm/tool_tests/resources/"
 # Rule customization
 #------------------------------------
 ### Read Preprocessing ###
-# 1. deduplicate reads using clumpify
+# 1. Deduplicate reads using clumpify (OPTIONAL)
 clumpify:
-  extra_args: ""
+  # run clumpify?
+  run_clumpify: True
+  # extra clumpify arguments? (input as string)
+  # Note: the recommended arguments are: "dedupe=t optical=t spany=t adjacent=t"
+  extra_args: "dedupe=t optical=t spany=t adjacent=t"
 
-# 2. kneaddata arguments
+# 2. Quality filter and remove human reads with KneadData (REQUIRED)
 kneaddata:
   # extra kneaddata arguments? (input as a string)
-  # Note: the path to trimmomatic may change, ensure this matches the executable before running
+  # Note: the recommended arguments are: "--remove-intermediate-output --verbose --trimmomatic <trimmomatic path>"
+  # Note: do not add --log option, as it will change the output which is used for determining read counts downstream
   extra_args: "--remove-intermediate-output --verbose --trimmomatic $CONDA_PREFIX/share/trimmomatic-0.39-2"
 
 
 ### Read-Based Taxonomy ###
+# 1. Taxonomically annotate reads using MetaPhlan (REQUIRED)
+metaphlan:
+  # extra metaphlan arguments? (input as string)
+  extra_args: "-t rel_ab_w_read_stats --input_type fastq --add_viruses"
+
 
 ### Read-Based Functional Analysis ###
 

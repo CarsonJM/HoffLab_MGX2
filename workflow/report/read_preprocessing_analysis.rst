@@ -1,4 +1,5 @@
-**Read counts determined before and after kneaddata**
+**Read counts determined at each step or preprocessing**
 
-**Kneaddata arguments:** {{ snakemake.config["kneaddata"]["extra_arguments"] }}
+Clumpify arguments: {{ snakemake.config["clumpify"]["extra_args"] }}
 
+Kneaddata arguments: {{ snakemake.config["kneaddata"]["extra_args"] }}

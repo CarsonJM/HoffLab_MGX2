@@ -1,12 +1,17 @@
 HoffLab MGX pipeline goals
 
 *** High Priority ***
-- Add clumpify
-- Add kneaddata
-- Add metaphlan
+- Add clumpify DONE
+- Add kneaddata DONE
+- Add metaphlan 3
 
 *** Lower priority
-- Add MetaLaffa
-- Add StrainPhlan
+- Add MetaLaffa 
+- Add Humann 3
+- Add StrainPhlan 3
 - Add Kraken2
-- Add Humann2
+
+*** Lowest priority
+- Add metaSPAdes
+- Add PhyloPhlan 3
+- Add instrain
