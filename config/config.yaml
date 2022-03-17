@@ -3,7 +3,7 @@
 #------------------------------------
 sample_info:
   # path to sample information sheet in TSV format (absolute path)
-  sample_list_path: "/home/carsonjm/CarsonJM/HoffLab_MGX/config/samples.tsv"
+  sample_list_path: "config/samples.tsv"
   # name of the study (for metadata)
   study_name: 'HoffLab_MGX_test'
   # information about the ecosystem the sample was obtained from (for metadata)

@@ -1,4 +1,4 @@
 sample	assembly	replicate	R1	R2
-C10_S69	1	1	/home/carsonjm/tool_tests/inputs/HoffLab_MGX_test/C10_S69_R1_001.fastq.gz	/home/carsonjm/tool_tests/inputs/HoffLab_MGX_test/C10_S69_R2_001.fastq.gz
-C10_S69	1	2	/home/carsonjm/tool_tests/inputs/HoffLab_MGX_test/C11_S70_R1_001.fastq.gz	/home/carsonjm/tool_tests/inputs/HoffLab_MGX_test/C11_S70_R2_001.fastq.gz
-E10_S75	2	1	/home/carsonjm/tool_tests/inputs/HoffLab_MGX_test/E10_S75_R1_001.fastq.gz	/home/carsonjm/tool_tests/inputs/HoffLab_MGX_test/E10_S75_R2_001.fastq.gz
+C10_S69	1	1	/labdata3/hoffdata/Shared/resources/HoffLab_MGX_test/C10_S69_R1_001.fastq.gz	/labdata3/hoffdata/Shared/resources/HoffLab_MGX_test/C10_S69_R2_001.fastq.gz
+C10_S69	1	2	/labdata3/hoffdata/Shared/resources/HoffLab_MGX_test/C11_S70_R1_001.fastq.gz	/labdata3/hoffdata/Shared/resources/HoffLab_MGX_test/C11_S70_R2_001.fastq.gz
+E10_S75	2	1	/labdata3/hoffdata/Shared/resources/HoffLab_MGX_test/E10_S75_R1_001.fastq.gz	/labdata3/hoffdata/Shared/resources/HoffLab_MGX_test/E10_S75_R2_001.fastq.gz
