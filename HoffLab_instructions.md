@@ -18,21 +18,27 @@
 
 `conda env create -f environment.yml`
 
+This may not work, so another option is:
+
+`conda create -y -n HoffLab_MGX -c conda-forge -c bioconda mamba=0.17.0 snakemake=6.10.0 snakefmt=0.4.4 snakedeploy=0.3.0 git=2.34.1`
+
+After creating the environment, run:
+
 `conda activate HoffLab_MGX`
 
 ## 4. Make a new directory where you want the analysis to take place
 
 `mkdir <insert directory name here>`
 
-## 5. Change to the location of the cloned directory
+## 5. Change to the location of the new directory
 
 `cd <insert directory name here>`
 
-## 6. Run the following command to deploy the phide_piper workflow in the specified directory
+## 6. Run the following command to deploy the HoffLab_MGX workflow in the specified directory
 
 `snakedeploy deploy-workflow https://github.com/CarsonJM/HoffLab_MGX.git . --branch master`
 
-*You should see a 'config' and 'workflow' directories now*
+*You should see 'config' and 'workflow' directories now*
 
 ## 7. Modify the config/config.yaml file so that:
 
