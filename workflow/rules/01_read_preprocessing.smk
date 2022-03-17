@@ -61,12 +61,18 @@ rule merge_replicates:
     params:
         R1=lambda wildcards: expand(results + "/00_INPUT_DATA/01_reads/{{sample_assembly}}_{replicate}_R1.fastq.gz", replicate=samples_df[samples_df["sample"].astype("string") + "_" + samples_df["assembly"].astype("string") == wildcards.sample_assembly]["replicate"]),
         R2=lambda wildcards: expand(results + "/00_INPUT_DATA/01_reads/{{sample_assembly}}_{replicate}_R2.fastq.gz", replicate=samples_df[samples_df["sample"].astype("string") + "_" + samples_df["assembly"].astype("string") == wildcards.sample_assembly]["replicate"]),
+        read_pre_dir=results + "/01_READ_PREPROCESSING",
+        merge_rep_dir=results + "/01_merge_replicates",
     threads: 1
     priority: 3
     conda:
         "../envs/clumpify.yml"
     shell:
         """
+        # make output directory
+        mkdir {params.read_pre_dir}
+        mkdir {params.merge_rep_dir}
+
         # merge replicates for each sample and unzip
         cat {params.R1} > {output.R1}
         cat {params.R2} > {output.R2}
