@@ -15,7 +15,7 @@ results = os.getcwd()
 resources = config["resources_path"]
 
 # load report
-# report: "../report/workflow.rst"
+report: "../report/workflow.rst"
 
 # load sample information to be used in workflow
 samples = samples_df["sample"]
@@ -112,14 +112,14 @@ rule clumpify:
 # build kneaddata bowtie2 database
 rule build_kneaddata_database:
     output:
-        resources + "kneaddata/hg37dec_v0.1.1.bt2",
-        resources + "kneaddata/hg37dec_v0.1.2.bt2",
-        resources + "kneaddata/hg37dec_v0.1.3.bt2",
-        resources + "kneaddata/hg37dec_v0.1.4.bt2",
-        resources + "kneaddata/hg37dec_v0.1.rev.1.bt2",
-        resources + "kneaddata/hg37dec_v0.1.rev.2.bt2",
+        resources + "/kneaddata/hg37dec_v0.1.1.bt2",
+        resources + "/kneaddata/hg37dec_v0.1.2.bt2",
+        resources + "/kneaddata/hg37dec_v0.1.3.bt2",
+        resources + "/kneaddata/hg37dec_v0.1.4.bt2",
+        resources + "/kneaddata/hg37dec_v0.1.rev.1.bt2",
+        resources + "/kneaddata/hg37dec_v0.1.rev.2.bt2",
     params:
-        human_db_dir=resources + "kneaddata/",
+        human_db_dir=resources + "/kneaddata/",
     threads: 1
     priority: 1
     conda:
@@ -142,12 +142,12 @@ else:
 # quality filter reads with kneaddata
 rule kneaddata:
     input:
-        resources + "kneaddata/hg37dec_v0.1.1.bt2",
-        resources + "kneaddata/hg37dec_v0.1.2.bt2",
-        resources + "kneaddata/hg37dec_v0.1.3.bt2",
-        resources + "kneaddata/hg37dec_v0.1.4.bt2",
-        resources + "kneaddata/hg37dec_v0.1.rev.1.bt2",
-        resources + "kneaddata/hg37dec_v0.1.rev.2.bt2",
+        resources + "/kneaddata/hg37dec_v0.1.1.bt2",
+        resources + "/kneaddata/hg37dec_v0.1.2.bt2",
+        resources + "/kneaddata/hg37dec_v0.1.3.bt2",
+        resources + "/kneaddata/hg37dec_v0.1.4.bt2",
+        resources + "/kneaddata/hg37dec_v0.1.rev.1.bt2",
+        resources + "/kneaddata/hg37dec_v0.1.rev.2.bt2",
         R1=kneaddata_R1_input,
         R2=kneaddata_R2_input,
     output:
@@ -163,7 +163,7 @@ rule kneaddata:
         + "/01_READ_PREPROCESSING/03_kneaddata/{sample_assembly}.log",
     params:
         output_dir=directory(results + "/01_READ_PREPROCESSING/03_kneaddata/"),
-        human_db=resources + "kneaddata/",
+        human_db=resources + "/kneaddata/",
         extra_args=config["kneaddata"]["extra_args"],
         prefix="{sample_assembly}",
     threads: 10
@@ -236,15 +236,15 @@ rule read_count_analysis:
         kneaddata=results + "/01_READ_PREPROCESSING/03_kneaddata/combined_read_counts.tsv",
     output:
         figure=report(
-            results + "/01_READ_PREPROCESSING/read_preprocessing_figure.png",
-            caption="../report/read_preprocessing_analysis.rst",
+            results + "/01_READ_PREPROCESSING/read_count_figure.png",
+            caption="../report/01_read_preprocessing_read_count_analysis.rst",
             category="Step 01: Read preprocessing",
         ),
-        report=results + "/01_READ_PREPROCESSING/read_preprocessing_report.tsv",
+        report=results + "/01_READ_PREPROCESSING/read_count_report.tsv",
     params:
         run_clumpify=config['clumpify']['run_clumpify'],
     threads: 1
     conda:
         "../envs/jupyter.yml"
     notebook:
-        "../notebooks/01_read_preprocessing_analysis.py.ipynb"
+        "../notebooks/01_read_preprocessing_read_count_analysis.py.ipynb"

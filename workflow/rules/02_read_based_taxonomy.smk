@@ -12,7 +12,7 @@ samples_df = pd.read_csv(config["sample_info"]["sample_list_path"], sep="\t")
 results = os.getcwd()
 
 # load report
-report: "report/workflow.rst"
+report: "../report/workflow.rst"
 
 # load resources folder path
 resources = config["resources_path"]
@@ -29,9 +29,9 @@ samples_assemblies=list(set(samples_df["sample"].astype("string") + "_" + sample
 # download metaphlan database
 rule metaphlan_database:
     output:
-        resources + "metaphlan/mpa_latest",
+        resources + "/metaphlan/mpa_latest",
     params:
-        metaphlan_db=resources + "metaphlan/",
+        metaphlan_db=resources + "/metaphlan/",
     conda: 
         "../envs/metaphlan.yml"
     shell:
@@ -44,7 +44,7 @@ rule metaphlan_database:
 # taxonomically annotate reads with metaphlan
 rule metaphlan:
     input:
-        metphlan_db=resources + "metaphlan/mpa_latest",
+        metphlan_db=resources + "/metaphlan/mpa_latest",
         R1=results + "/01_READ_PREPROCESSING/03_kneaddata/{sample_assembly}_paired_1.fastq.gz",
         R2=results + "/01_READ_PREPROCESSING/03_kneaddata/{sample_assembly}_paired_2.fastq.gz",
         R1S=results + "/01_READ_PREPROCESSING/03_kneaddata/{sample_assembly}_unmatched_1.fastq.gz",
@@ -93,3 +93,20 @@ rule combine_metaphlan_profiles:
         merge_metaphlan_tables.py \
         {input} > {output}
         """
+
+
+# visualize metaphlan results
+rule metaphlan_analysis:
+    input:
+        results+"/02_READ_BASED_TAXONOMY/metaphlan_combined_profiles.txt"
+    output:
+        figure=report(
+            results + "/02_READ_BASED_TAXONOMY/metaphlan_phyla_barplots.png",
+            caption="../report/02_read_based_taxonomy_metaphlan.rst",
+            category="Step 02: Read-based taxonomy",
+        ),
+    threads: 1
+    conda:
+        "../envs/jupyter.yml"
+    notebook:
+        "../notebooks/02_read_based_taxonomy_metaphlan_analysis.py.ipynb"

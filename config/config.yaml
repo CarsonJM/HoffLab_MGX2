@@ -14,7 +14,7 @@ sample_info:
 # Resources path
 #------------------------------------
 # path to resources folder (so large databases can be re-used)
-resources_path: "/home/carsonjm/tool_tests/resources/"
+resources_path: "/labdata3/hoffdata/Shared/resources"
 
 
 #------------------------------------
@@ -41,8 +41,4 @@ kneaddata:
 # 1. Taxonomically annotate reads using MetaPhlan (REQUIRED)
 metaphlan:
   # extra metaphlan arguments? (input as string)
-  extra_args: "-t rel_ab_w_read_stats --input_type fastq --add_viruses"
-
-
-### Read-Based Functional Analysis ###
-
+  extra_args: "-t rel_ab_w_read_stats --input_type fastq"
