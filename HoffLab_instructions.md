@@ -14,7 +14,10 @@
 
 ## 3. Make and activate snakemake conda environment using following command
 
+`wget https://github.com/CarsonJM/HoffLab_MGX/blob/master/environment.yml`
+
 `conda env create -f environment.yml`
+
 `conda activate HoffLab_MGX`
 
 ## 4. Make a new directory where you want the analysis to take place
