@@ -35,6 +35,5 @@ include: "rules/02_read_based_taxonomy.smk"
 rule all:
     input:
         expand(results + "/00_INPUT_DATA/01_reads/{sample_assembly_replicate}_R1.fastq.gz", sample_assembly_replicate=samples_assemblies_replicates),
-        expand(results + "/01_READ_PREPROCESSING/01_merge_replicates/{sample_assembly}_R1.fastq.gz", sample_assembly=samples_assemblies),
         results + "/01_READ_PREPROCESSING/read_count_figure.png",
         results + "/02_READ_BASED_TAXONOMY/metaphlan_phyla_barplots.png",

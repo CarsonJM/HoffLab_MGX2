@@ -7,7 +7,7 @@ channels:
 
 dependencies:
   - mamba=0.17.0
-  - snakemake=6.10.0
+  - snakemake=7.2.1
   - snakefmt=0.4.4
   - snakedeploy=0.3.0
   - git=2.34.1

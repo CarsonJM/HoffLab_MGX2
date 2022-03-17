@@ -20,7 +20,7 @@
 
 This may not work, so another option is:
 
-`conda create -y -n HoffLab_MGX -c conda-forge -c bioconda mamba=0.17.0 snakemake=6.10.0 snakefmt=0.4.4 snakedeploy=0.3.0 git=2.34.1`
+`conda create -y -n HoffLab_MGX -c conda-forge -c bioconda mamba=0.17.0 snakemake=7.2.1 snakefmt=0.4.4 snakedeploy=0.3.0 git=2.34.1`
 
 After creating the environment, run:
 

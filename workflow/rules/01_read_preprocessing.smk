@@ -160,10 +160,11 @@ rule kneaddata:
         log=results
         + "/01_READ_PREPROCESSING/03_kneaddata/{sample_assembly}.log",
     params:
-        output_dir=directory(results + "/01_READ_PREPROCESSING/03_kneaddata/"),
+        output_dir=results + "/01_READ_PREPROCESSING/03_kneaddata/",
         human_db=resources + "/kneaddata/",
         extra_args=config["kneaddata"]["extra_args"],
         prefix="{sample_assembly}",
+        sample_output=results + "/01_READ_PREPROCESSING/03_kneaddata/{sample_assembly}",
     threads: 10
     priority: 2
     conda:
@@ -179,7 +180,7 @@ rule kneaddata:
         {params.extra_args}
 
         # gzip all output fastq files
-        gzip {params.output_dir}/*.fastq
+        gzip {params.sample_output}*.fastq
         """
 
 ### Analyze preprocessing results ###
