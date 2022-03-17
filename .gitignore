@@ -1,5 +1,4 @@
 *.snakemake/*
-*cluster_logs*
 *__pycache__*
 *00_INPUT_DATA*
 *01_READ_PREPROCESSING*

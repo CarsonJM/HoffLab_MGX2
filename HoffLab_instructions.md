@@ -36,7 +36,7 @@ After creating the environment, run:
 
 ## 6. Run the following command to deploy the HoffLab_MGX workflow in the specified directory
 
-`snakedeploy deploy-workflow https://github.com/CarsonJM/HoffLab_MGX.git . --branch master`
+`snakedeploy deploy-workflow https://github.com/CarsonJM/HoffLab_MGX.git . --tag v0.1-beta`
 
 *You should see 'config' and 'workflow' directories now*
 
@@ -56,26 +56,29 @@ After creating the environment, run:
 
 ## 8. Run the following command to generate a pdf preview of the workflow
 
-`snakemake --configfile <path to config file> --dag | dot -Tpdf > dag.pdf`
+`snakemake --dag | dot -Tpdf > dag.pdf`
 
 ## 9. Run a dry run of the workflow to verify everything is set up correctly
 
-`snakemake --configfile <path to config file> --dry-run`
+`snakemake --dry-run`
 
 ## 10. Set up a cruncher profile to use the qsub system
 
 *if you want to run the workflow on cruncher with qsub submissions, copy and paste the following text into a file
 at /home/<your_username>/.config/snakemake/cruncher/config.yaml*
 
-`cluster: "qsub -V -cwd -q new.q -j y -o config/cluster_logs/{rulename}.{jobid}.log"
-jobs: 20
-latency-wait: 60
-use-conda: True`
+`cluster: "qsub -V -cwd -q new.q -j y -o config/cluster_logs/{rulename}.{jobid}.log"`
+
+`jobs: 20`
+
+`latency-wait: 60`
+
+`use-conda: True`
   
 ## 11. Then run the following command to run the workflow:
 
-`snakemake --profile cruncher --configfile <path to config file>`
+`snakemake --profile cruncher`
 
 ## 12. Then run the following to generate a report from the workflow:
 
-`snakemake --profile cruncher --configfile <path to config file> --report <path to desired report location>`
+`snakemake --profile cruncher --report <path to desired report location>`

@@ -41,4 +41,5 @@ kneaddata:
 # 1. Taxonomically annotate reads using MetaPhlan (REQUIRED)
 metaphlan:
   # extra metaphlan arguments? (input as string)
+  # Note: the recommended settings are: "-t rel_ab_w_read_stats --input_type fastq"
   extra_args: "-t rel_ab_w_read_stats --input_type fastq"
