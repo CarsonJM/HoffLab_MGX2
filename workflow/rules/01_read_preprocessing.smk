@@ -62,7 +62,7 @@ rule merge_replicates:
         R1=lambda wildcards: expand(results + "/00_INPUT_DATA/01_reads/{{sample_assembly}}_{replicate}_R1.fastq.gz", replicate=samples_df[samples_df["sample"].astype("string") + "_" + samples_df["assembly"].astype("string") == wildcards.sample_assembly]["replicate"]),
         R2=lambda wildcards: expand(results + "/00_INPUT_DATA/01_reads/{{sample_assembly}}_{replicate}_R2.fastq.gz", replicate=samples_df[samples_df["sample"].astype("string") + "_" + samples_df["assembly"].astype("string") == wildcards.sample_assembly]["replicate"]),
         read_pre_dir=results + "/01_READ_PREPROCESSING",
-        merge_rep_dir=results + "/01_merge_replicates",
+        merge_rep_dir=results + "/01_READ_PREPROCESSING/01_merge_replicates",
     threads: 1
     priority: 3
     conda:
