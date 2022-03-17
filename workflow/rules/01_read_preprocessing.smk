@@ -30,52 +30,44 @@ R2_files=samples_df["R2"]
 # create a symlink for each reads file (helps with downstream processing)
 rule symlink_reads:
     input:
-        R1=expand("{R1}", R1=R1_files),
-        R2=expand("{R2}", R2=R2_files),
-    output:
-        R1=results + "/00_INPUT_DATA/01_reads/{sample_assembly_replicate}_R1.fastq.gz",
-        R2=results + "/00_INPUT_DATA/01_reads/{sample_assembly_replicate}_R2.fastq.gz",
-    params:
+        R1_display=expand("{R1}", R1=R1_files),
+        R2_display=expand("{R2}", R2=R2_files),
         R1=lambda wildcards: samples_df[(samples_df["sample"].astype("string") + "_" + samples_df["assembly"].astype("string") + "_" + samples_df["replicate"].astype("string")) == wildcards.sample_assembly_replicate].iloc[
             0
         ]["R1"],
         R2=lambda wildcards: samples_df[(samples_df["sample"].astype("string") + "_" + samples_df["assembly"].astype("string") + "_" + samples_df["replicate"].astype("string")) == wildcards.sample_assembly_replicate].iloc[
             0
         ]["R2"],
+    output:
+        R1=results + "/00_INPUT_DATA/01_reads/{sample_assembly_replicate}_R1.fastq.gz",
+        R2=results + "/00_INPUT_DATA/01_reads/{sample_assembly_replicate}_R2.fastq.gz",
     priority: 3
     shell:
         """
         # create a symlink for each file
-        ln -s {params.R1} {output.R1}
-        ln -s {params.R2} {output.R2}
+        ln -s {input.R1} {output.R1}
+        ln -s {input.R2} {output.R2}
         """
 
 # merge replicates from each sample
 rule merge_replicates:
     input:
-        R1=expand(results + "/00_INPUT_DATA/01_reads/{sample_assembly_replicate}_R1.fastq.gz", sample_assembly_replicate=samples_assemblies_replicates),
-        R2=expand(results + "/00_INPUT_DATA/01_reads/{sample_assembly_replicate}_R2.fastq.gz", sample_assembly_replicate=samples_assemblies_replicates),
+        R1_display=expand(results + "/00_INPUT_DATA/01_reads/{sample_assembly_replicate}_R1.fastq.gz", sample_assembly_replicate=samples_assemblies_replicates),
+        R2_display=expand(results + "/00_INPUT_DATA/01_reads/{sample_assembly_replicate}_R2.fastq.gz", sample_assembly_replicate=samples_assemblies_replicates),
+        R1=lambda wildcards: expand(results + "/00_INPUT_DATA/01_reads/{{sample_assembly}}_{replicate}_R1.fastq.gz", replicate=samples_df[samples_df["sample"].astype("string") + "_" + samples_df["assembly"].astype("string") == wildcards.sample_assembly]["replicate"]),
+        R2=lambda wildcards: expand(results + "/00_INPUT_DATA/01_reads/{{sample_assembly}}_{replicate}_R2.fastq.gz", replicate=samples_df[samples_df["sample"].astype("string") + "_" + samples_df["assembly"].astype("string") == wildcards.sample_assembly]["replicate"]),
     output:
         R1=results + "/01_READ_PREPROCESSING/01_merge_replicates/{sample_assembly}_R1.fastq.gz",
         R2=results + "/01_READ_PREPROCESSING/01_merge_replicates/{sample_assembly}_R2.fastq.gz",
-    params:
-        R1=lambda wildcards: expand(results + "/00_INPUT_DATA/01_reads/{{sample_assembly}}_{replicate}_R1.fastq.gz", replicate=samples_df[samples_df["sample"].astype("string") + "_" + samples_df["assembly"].astype("string") == wildcards.sample_assembly]["replicate"]),
-        R2=lambda wildcards: expand(results + "/00_INPUT_DATA/01_reads/{{sample_assembly}}_{replicate}_R2.fastq.gz", replicate=samples_df[samples_df["sample"].astype("string") + "_" + samples_df["assembly"].astype("string") == wildcards.sample_assembly]["replicate"]),
-        read_pre_dir=results + "/01_READ_PREPROCESSING",
-        merge_rep_dir=results + "/01_READ_PREPROCESSING/01_merge_replicates",
     threads: 1
     priority: 3
     conda:
         "../envs/clumpify.yml"
     shell:
         """
-        # make output directory
-        mkdir {params.read_pre_dir}
-        mkdir {params.merge_rep_dir}
-
         # merge replicates for each sample and unzip
-        cat {params.R1} > {output.R1}
-        cat {params.R2} > {output.R2}
+        cat {input.R1} > {output.R1}
+        cat {input.R2} > {output.R2}
         """
 
 ### Deduplicate reads using clumpify ###

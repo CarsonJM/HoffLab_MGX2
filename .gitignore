@@ -1,4 +1,6 @@
 *.snakemake/*
+*test_config.yaml*
+*test_samples.tsv*
 *__pycache__*
 *00_INPUT_DATA*
 *01_READ_PREPROCESSING*
