@@ -1,0 +1,44 @@
+# -------------------------------------
+# Snakefile: set up and module organization
+# -------------------------------------
+import pandas as pd
+
+
+# Load sample information and validate
+configfile: "config/config.yaml"
+
+
+samples_df = pd.read_csv(config["samples_df"], sep="\t")
+samples = samples_df["sample"]
+
+
+# load results path
+results = config["results"]
+
+
+# load report
+report: "report/workflow.rst"
+
+
+# -------------------------------------
+# Modularization: rules to include
+# -------------------------------------
+include: "rules/01_biobakery_workflows.smk"
+
+
+
+# -------------------------------------
+# Pipeline outputs
+# -------------------------------------
+def get_final_output(wildcards):
+
+    final_output = []
+
+    final_output.append(results + "01_READ_PREPROCESSING/raw_multiqc_report.html")
+
+    return final_output
+
+
+rule all:
+    input:
+        get_final_output,

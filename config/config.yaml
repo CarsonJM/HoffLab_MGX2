@@ -1,0 +1,38 @@
+#------------------------------------
+# Pipeline options
+#------------------------------------
+# path to where samples file is stored
+samples_df: "/gscratch/stf/carsonjm/CarsonJM/phide_piper/config/samples.tsv"
+# path to folder where outputs should be stored
+results: "/gscratch/stf/carsonjm/CarsonJM/phide_piper/results/"
+# path to directory where large downloads should be stored
+resources: "/gscratch/scrubbed/carsonjm/resources/"
+
+
+#------------------------------------
+# Database options
+#------------------------------------
+virus_db: "/labdata3/hoffdata/Shared/resources/imgvr_5.1/IMGVR_votu_reps_hq.fna"
+virus_db_meta: "/labdata3/hoffdata/Shared/resources/imgvr_5.1/IMGVR_hq_Sequence_information.tsv"
+# to generate a spacer_db, you can set to "create" and a spacer_db will be created using the bacteria_db
+spacer_db: "/labdata3/hoffdata/Shared/resources/crispr_spacers/uhgg_spacers.fna"
+spacer_db_meta: "/labdata3/hoffdata/Shared/resources/crispr_spacers/uhgg_spacers_metadata.tsv"
+# to generate a bacteria_db, you can set to "create", and a bacteria_db will be created using the assemblies
+bacteria_db_dir: "/labdata3/hoffdata/Shared/resources/bacteria_db/test/"
+bacteria_db_meta: "/labdata3/hoffdata/Shared/resources/bacteria_db/uhog_genome-all_metadata.tsv"
+function_db: ""
+function_db_meta: ""
+taxonomy_db: ""
+taxonomy_db_meta: ""
+
+
+
+#------------------------------------
+# Rule customization 
+#------------------------------------ 
+### Preprocessing ###
+read_preprocessing:
+  kneaddata_arguments: "--remove-intermediate-output --verbose --trimmomatic $CONDA_PREFIX/share/trimmomatic-0.39-2"
+  kneaddata_threads: 8
+
+

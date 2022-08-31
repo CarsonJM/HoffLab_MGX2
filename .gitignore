@@ -1,0 +1,7 @@
+*.snakemake/*
+dag.pdf
+*results*
+slurm_logs/*
+*test_input*
+simple/*
+benchmark/*

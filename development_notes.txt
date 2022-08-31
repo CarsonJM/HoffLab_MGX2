@@ -1,0 +1,23 @@
+Pipeline To Do:
+- Append new spacer meta to current spacer meta
+- Add iPhoP to pipeline
+- Cluster viruses with IMG/VR using vContact2
+- Test DRAMv (change VirSorter output and contig names)
+- Add additional HMM databases to DRAMv
+- Implement MAG pipeline (bulk only)
+- Implement provirus activity module (bulk only)
+
+Benchmarking To Do:
+Oral in silico mock community (virome & bulk)
+- Re-make dereplicated mock community
+- Benchmark virus enrichment (virome vs bulk)
+- Benchmark virus assembly recovery and chimera (metaspades, metaviralspades, rnaviralspades, and combined)
+- Benchmark clustering effect on recovery and chimera (db only, assembly only, assembly and db)
+- Benchmark virus identification (Individual vs combined)
+- Benchmark virus quality (HQ, MQ, all viruses)
+- Benchmark virus abundance (breadth & depth)
+- Benchmark virus host PHIST, iPHoP, and vOTU (HQ, MQ, all viruses)
+- Benchmark virus taxonomy MMseqs2, HMM, vOTU, vcontact2  (HQ, MQ, all viruses)
+
+Resources:
+- RNA virus database https://riboviria.org/user-guide (https://www.biorxiv.org/content/10.1101/2022.02.15.480533v2.full.pdf)

@@ -1,0 +1,11 @@
+name: phide_piper
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - mamba=0.15.3
+  - snakemake=7.12.1
+  - snakefmt=0.6.1
+  - snakedeploy=0.6.0
+  - git=2.34.1
