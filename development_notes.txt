@@ -21,3 +21,5 @@ Oral in silico mock community (virome & bulk)
 
 Resources:
 - RNA virus database https://riboviria.org/user-guide (https://www.biorxiv.org/content/10.1101/2022.02.15.480533v2.full.pdf)
+
+Edit from Hillary
