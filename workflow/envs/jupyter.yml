@@ -1,0 +1,10 @@
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - python=3.9
+  - biopython=1.79
+  - plotnine=0.8.0
+  - jupyter=1.0
+  - pandas=1.3.4

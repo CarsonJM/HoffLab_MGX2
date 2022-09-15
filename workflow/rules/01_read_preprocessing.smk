@@ -27,11 +27,12 @@ report: "../report/workflow.rst"
 # -------------------------------------
 # Preprocessing Rules
 # -------------------------------------
+localrules: symlink_reads, merge_replicates, download_kneaddata_db, kneaddata_read_counts, combine_read_counts
+
+
 # -----------------------------------------------------
 # 00 Symlink Reads
 # -----------------------------------------------------
-from snakemake.remote import AUTO
-
 # symlink input paths to new paths
 rule symlink_reads:
     input:
@@ -50,8 +51,7 @@ rule symlink_reads:
         "benchmark/01_READ_PREPROCESSING/symlink_reads_{sample_replicate}.tsv"
     resources:
         runtime="00:00:10",
-        partition="ckpt",
-        mem_mb="1000",
+        mem_mb="100",
     shell:
         """
         # symlink input paths to renamed files
@@ -82,14 +82,13 @@ rule merge_replicates:
             replicate=sample_replicate_dictionary[wildcards.sample],
         ),
     output:
-        R1=results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}_1.fastq.gz",
-        R2=results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}_2.fastq.gz",
+        R1=temp(results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}.R1.fastq.gz"),
+        R2=temp(results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}.R2.fastq.gz"),
     benchmark:
         "benchmark/01_READ_PREPROCESSING/merge_replicates_{sample}.tsv"
     resources:
         runtime="00:00:10",
-        partition="ckpt",
-        mem_mb="1000",
+        mem_mb="100",
     shell:
         """
         # symlink input paths to renamed files
@@ -99,109 +98,56 @@ rule merge_replicates:
 
 
 # -----------------------------------------------------
-# 02 Raw FASTQC & MULTIQC
+# 02 Clumpify
 # -----------------------------------------------------
-# Run FASTQC on raw R1 reads
-rule raw_fastqc_R1:
+# deduplicate reads with clumpify
+rule clumpify:
     input:
-        results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}_1.fastq.gz",
+        R1=results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}.R1.fastq.gz",
+        R2=results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}.R2.fastq.gz",
     output:
-        results + "01_READ_PREPROCESSING/02_raw_fastqc/{sample}_1_fastqc.html",
+        R1=results + "01_READ_PREPROCESSING/02_clumpify/{sample}.R1.fastq",
+        R2=results + "01_READ_PREPROCESSING/02_clumpify/{sample}.R2.fastq",
+        log=results + "01_READ_PREPROCESSING/02_clumpify/{sample}.log",
     log:
-        results + "00_LOGS/01_raw_fastqc_R1.{sample}.log",
+        results + "00_LOGS/01_clumpify.{sample}.log"
     params:
-        out_dir=results + "01_READ_PREPROCESSING/02_raw_fastqc/",
+        extra_args=config['read_preprocessing']['clumpify_arguments'],
+        R1=results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}.R1.fastq",
+        R2=results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}.R2.fastq",
+        log_dir=results +"00_LOGS/",
     conda:
-        "../envs/fastqc.yml"
-    container: 
-        "docker://biocontainers/fastqc"
+        "../envs/bbmap.yml"
+    container:
+        "docker://quay.io/biocontainers/bbmap:38.95--he522d1c_0"
     benchmark:
-        "benchmark/01_READ_PREPROCESSING/raw_fastqc_R1_{sample}.tsv"
+        "benchmark/01_READ_PREPROCESSING/clumpify_{sample}.tsv"
     resources:
-        runtime="00:05:00",
-        partition="ckpt",
-        mem_mb="1000",
+        runtime="04:00:00",
+        mem_mb="5000",
     shell:
         """
-        # generate fastqc report for forward reads
-        fastqc {input} --outdir {params.out_dir} > {log} 2>&1
+        # unzip input files
+        gunzip {input.R1}
+        gunzip {input.R2}
+
+        # run clumpify
+        clumpify.sh \
+        in={params.R1} \
+        in2={params.R2} \
+        out={output.R1} \
+        out2={output.R2} \
+        {params.extra_args} > {log} 2>&1
+
+        # copy log to log dir
+        cp {log} {output.log}
         """
-
-
-# Run FASTQC on raw R2 reads
-rule raw_fastqc_R2:
-    input:
-        results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}_2.fastq.gz",
-    output:
-        results + "01_READ_PREPROCESSING/02_raw_fastqc/{sample}_2_fastqc.html",
-    log:
-        results + "00_LOGS/01_raw_fastqc_R2.{sample}.log",
-    params:
-        out_dir=results + "01_READ_PREPROCESSING/02_raw_fastqc/",
-    conda:
-        "../envs/fastqc.yml"
-    container: 
-        "docker://biocontainers/fastqc"
-    benchmark:
-        "benchmark/01_READ_PREPROCESSING/raw_fastqc_R2_{sample}.tsv"
-    resources:
-        runtime="00:05:00",
-        partition="ckpt",
-        mem_mb="1000",
-    shell:
-        """
-        # generate fastqc report for reverse reads
-        fastqc {input} --outdir {params.out_dir} > {log} 2>&1
-        """
-
-
-# Combine FASTQC results using multiQC
-rule raw_multiqc:
-    input:
-        expand(
-            results
-            + "01_READ_PREPROCESSING/02_raw_fastqc/{sample}_{read}_fastqc.html",
-            sample=samples,
-            read=["1", "2"],
-        ),
-    output:
-        report(
-            results + "01_READ_PREPROCESSING/raw_multiqc_report.html",
-            caption="../report/01_read_preprocessing_analysis.rst",
-            category="Step 01: Read preprocessing",
-        ),
-    log:
-        results + "00_LOGS/01_raw_multiqc.log",
-    params:
-        in_dir=results + "01_READ_PREPROCESSING/02_raw_fastqc/",
-        out_dir=results + "01_READ_PREPROCESSING/single/",
-        out_file=results + "01_READ_PREPROCESSING/single/multiqc_report.html",
-    conda:
-        "../envs/multiqc.yml"
-    benchmark:
-        "benchmark/01_READ_PREPROCESSING/raw_multiqc.tsv"
-    resources:
-        runtime="00:10:00",
-        partition="ckpt",
-        mem_mb="1000",
-    shell:
-        """
-        # remove multiqc output
-        rm -f {params.out_file}
-
-        # generate mutliqc report
-        multiqc {params.in_dir} -o {params.out_dir} > {log} 2>&1
-        mv {params.out_file} {output}
-
-        rm -r {params.out_dir}
-        """
-
 
 # -----------------------------------------------------
 # 03 KneadData
 # -----------------------------------------------------
-# build kneaddata bowtie2 database
-rule download_kneaddata_database:
+# download biobakery workflow databases
+rule download_kneaddata_db:
     output:
         resources + "kneaddata/hg37dec_v0.1.1.bt2",
         resources + "kneaddata/hg37dec_v0.1.2.bt2",
@@ -214,13 +160,14 @@ rule download_kneaddata_database:
     params:
         kneaddata_db=resources + "kneaddata/",
     conda:
-        "../envs/kneaddata.yml"
+        "../envs/biobakery_workflows.yml"
+    container: 
+        "/gscratch/stf/carsonjm/apptainer/workflows_3.0.0.a.7.sif"
     benchmark:
         "benchmark/01_READ_PREPROCESSING/download_kneaddata.tsv"
     resources:
         runtime="00:10:00",
-        partition="ckpt",
-        mem_mb="10000",
+        mem_mb="1000",
     shell:
         """
         # download human genome reference to desired directory
@@ -237,28 +184,30 @@ rule kneaddata:
         resources + "kneaddata/hg37dec_v0.1.4.bt2",
         resources + "kneaddata/hg37dec_v0.1.rev.1.bt2",
         resources + "kneaddata/hg37dec_v0.1.rev.2.bt2",
-        R1=results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}_1.fastq.gz",
-        R2=results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}_2.fastq.gz",
+        R1=results + "01_READ_PREPROCESSING/02_clumpify/{sample}.R1.fastq",
+        R2=results + "01_READ_PREPROCESSING/02_clumpify/{sample}.R2.fastq",
     output:
-        log=results + "01_READ_PREPROCESSING/03_kneaddata/{sample}.log",
         R1=results + "01_READ_PREPROCESSING/03_kneaddata/{sample}_paired_1.fastq",
         R2=results + "01_READ_PREPROCESSING/03_kneaddata/{sample}_paired_2.fastq",
+        log=results + "01_READ_PREPROCESSING/03_kneaddata/{sample}.log",
     log:
-        results + "00_LOGS/01_kneaddata.{sample}.log",
+        results + "00_LOGS/01_kneaddata.{sample}.log"
     params:
         out_dir=results + "01_READ_PREPROCESSING/03_kneaddata/",
         human_db=resources + "kneaddata/",
         extra_args=config["read_preprocessing"]["kneaddata_arguments"],
         prefix="{sample}",
+        log_dir=results + "00_LOGS/",
     conda:
-        "../envs/kneaddata.yml"
-    threads: config["read_preprocessing"]["kneaddata_threads"]
+        "../envs/biobakery_workflows.yml"
+    container: 
+        "/gscratch/stf/carsonjm/apptainer/workflows_3.0.0.a.7.sif"
     benchmark:
         "benchmark/01_READ_PREPROCESSING/kneaddata_{sample}.tsv"
     resources:
-        runtime="01:00:00",
-        partition="ckpt",
-        mem_mb="10000",
+        runtime="4:00:00",
+        mem_mb="5000",
+    threads: config["read_preprocessing"]["kneaddata_threads"]
     shell:
         """
         # run kneaddata to quality filter and remove host reads
@@ -267,107 +216,69 @@ rule kneaddata:
         --output-prefix {params.prefix} \
         --reference-db {params.human_db} \
         --threads {threads} \
+        --run-trf \
+        --serial \
+        --log {log} \
         {params.extra_args}
 
-        # copy log output to log directory
-        cp {output.log} {log}
+        # copy log to log dir
+        cp {log} {output.log}
         """
 
 
 # -----------------------------------------------------
-# 04 Preprocessed FASTQC & MULTIQC
+# 04 Read Counts
 # -----------------------------------------------------
-# Run FASTQC on preprocessed R1 reads
-rule preprocessed_fastqc_R1:
+# determine clumpify read counts
+rule clumpify_read_counts:
     input:
-        results + "01_READ_PREPROCESSING/03_kneaddata/{sample}_paired_1.fastq",
+        expand(results + "01_READ_PREPROCESSING/02_clumpify/{sample}.log", sample=samples),
     output:
-        results
-        + "01_READ_PREPROCESSING/04_preprocessed_fastqc/{sample}_paired_1_fastqc.html",
-    log:
-        results + "00_LOGS/01_preprocessed_fastqc_R1.{sample}.log",
-    params:
-        out_dir=results + "01_READ_PREPROCESSING/04_preprocessed_fastqc/",
-    conda:
-        "../envs/fastqc.yml"
-    container: 
-        "docker://biocontainers/fastqc"
-    benchmark:
-        "benchmark/01_READ_PREPROCESSING/preprocessed_fastqc_R1_{sample}.tsv"
-    resources:
-        runtime="00:05:00",
-        partition="ckpt",
-        mem_mb="1000",
-    shell:
-        """
-        # generate fastqc report for forward reads
-        fastqc {input} --outdir {params.out_dir} > {log} 2>&1
-        """
-
-
-# Run FASTQC on preprocessed R2 reads
-rule preprocessed_fastqc_R2:
-    input:
-        results + "01_READ_PREPROCESSING/03_kneaddata/{sample}_paired_2.fastq",
-    output:
-        results
-        + "01_READ_PREPROCESSING/04_preprocessed_fastqc/{sample}_paired_2_fastqc.html",
-    log:
-        results + "00_LOGS/01_preprocessed_fastqc_R2.{sample}.log",
-    params:
-        out_dir=results + "01_READ_PREPROCESSING/04_preprocessed_fastqc/",
-    conda:
-        "../envs/fastqc.yml"
-    container: 
-        "docker://biocontainers/fastqc"
-    benchmark:
-        "benchmark/01_READ_PREPROCESSING/preprocessed_fastqc_R2_{sample}.tsv"
-    resources:
-        runtime="00:05:00",
-        partition="ckpt",
-        mem_mb="1000",
-    shell:
-        """
-        # generate fastqc report for reverse reads
-        fastqc {input} --outdir {params.out_dir} > {log} 2>&1
-        """
-
-
-# Combine FASTQC results using multiQC
-rule preprocessed_multiqc:
-    input:
-        expand(
-            results
-            + "01_READ_PREPROCESSING/04_preprocessed_fastqc/{sample}_paired_{read}_fastqc.html",
-            sample=samples,
-            read=["1", "2"],
-        ),
-    output:
-        report(
-            results + "01_READ_PREPROCESSING/preprocessed_multiqc_report.html",
-            caption="../report/01_read_preprocessing_analysis.rst",
-            category="Step 01: Read preprocessing",
-        ),
-    log:
-        results + "00_LOGS/01_preprocessed_multiqc.log",
-    params:
-        in_dir=results + "01_READ_PREPROCESSING/04_preprocessed_fastqc/",
-        out_file=results
-        + "01_READ_PREPROCESSING/04_preprocessed_fastqc/multiqc_report.html",
-    conda:
-        "../envs/multiqc.yml"
-    benchmark:
-        "benchmark/01_READ_PREPROCESSING/preprocessed_multiqc.tsv"
+        results + "01_READ_PREPROCESSING/02_clumpify/read_counts.tsv",
     resources:
         runtime="00:10:00",
-        partition="ckpt",
+        mem_mb="1000",
+    notebook:
+        "../notebooks/01_clumpify_read_counts.py.ipynb"
+
+
+# determine read counts using kneaddata utils
+rule kneaddata_read_counts:
+    input:
+        expand(results + "01_READ_PREPROCESSING/03_kneaddata/{sample}.log", sample=samples),
+    output:
+        results + "01_READ_PREPROCESSING/03_kneaddata/read_counts.tsv",
+    params:
+        log_dir=results + "01_READ_PREPROCESSING/03_kneaddata/",
+    conda:
+        "../envs/biobakery_workflows.yml"
+    container: 
+        "/gscratch/stf/carsonjm/apptainer/workflows_3.0.0.a.7.sif"
+    benchmark:
+        "benchmark/01_READ_PREPROCESSING/kneaddata_read_counts.tsv"
+    resources:
+        runtime="00:10:00",
         mem_mb="1000",
     shell:
         """
-        # remove multiqc output
-        rm -f {params.out_file}
-
-        # generate mutliqc report
-        multiqc {params.in_dir} -o {params.in_dir} > {log} 2>&1
-        mv {params.out_file} {output}
+        # generate read counts from kneaddata log files
+        kneaddata_read_count_table \
+        --input {params.log_dir} \
+        --output {output}
         """
+
+
+# combine clumpify and kneaddata read counts
+rule combine_read_counts:
+    input:
+        clumpify=results + "01_READ_PREPROCESSING/02_clumpify/read_counts.tsv",
+        kneaddata=results + "01_READ_PREPROCESSING/03_kneaddata/read_counts.tsv",
+    output:
+        results + "01_READ_PREPROCESSING/read_preprocessing_report.tsv",
+    benchmark:
+        "benchmark/01_READ_PREPROCESSING/combine_read_counts.tsv"
+    resources:
+        runtime="00:10:00",
+        mem_mb="1000",
+    notebook:
+        "../notebooks/01_combine_read_counts.py.ipynb"

@@ -1,0 +1,8 @@
+channels:
+  - conda-forge
+  - bioconda
+  - biobakery
+  - defaults
+
+dependencies:
+  - biobakery_workflows=3.0.0.a.7

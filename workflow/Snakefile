@@ -23,8 +23,10 @@ report: "report/workflow.rst"
 # -------------------------------------
 # Modularization: rules to include
 # -------------------------------------
-include: "rules/01_biobakery_workflows.smk"
-
+include: "rules/01_read_preprocessing.smk"
+include: "rules/02_read_based_taxonomy.smk"
+# include: "rules/03_read_based_function.smk"
+# include: "rules/04_read_based_phylogeny.smk"
 
 
 # -------------------------------------
@@ -34,9 +36,13 @@ def get_final_output(wildcards):
 
     final_output = []
 
-    final_output.append(results + "01_READ_PREPROCESSING/raw_multiqc_report.html")
+    final_output.append(results + "01_READ_PREPROCESSING/read_preprocessing_report.tsv")
+    final_output.append(results + "02_READ_BASED_TAXONOMY/metaphlan_combined_profiles_species.tsv")
 
     return final_output
+
+
+localrules: all
 
 
 rule all:

@@ -1,7 +1,6 @@
 cluster:
   mkdir -p slurm_logs/`date +"%y-%m-%d"`/{rule} &&
   sbatch
-    --partition={resources.partition}
     --cpus-per-task={threads}
     --mem={resources.mem_mb}
     --job-name=smk-{rule}-{wildcards}
@@ -10,8 +9,9 @@ cluster:
     --time={resources.runtime}
     --parsable
     --export=ALL
+    --partition={resources.partition}
 default-resources:
-  - partition=compute
+  - partition=ckpt
   - mem_mb=1000
   - runtime="01:00:00"
 restart-times: 0
@@ -24,6 +24,7 @@ rerun-incomplete: True
 printshellcmds: True
 scheduler: greedy
 use-singularity: True
+singularity-args: "-B /gscratch/"
 cluster-status: status-sacct.sh
 rerun-triggers: mtime
 cluster-cancel: scancel
