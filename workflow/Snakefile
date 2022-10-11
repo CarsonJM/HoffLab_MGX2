@@ -20,11 +20,14 @@ results = config["results"]
 report: "report/workflow.rst"
 
 
+container: "docker://condaforge/mambaforge:4.14.0-0"
+
+
 # -------------------------------------
 # Modularization: rules to include
 # -------------------------------------
 include: "rules/01_read_preprocessing.smk"
-include: "rules/02_read_based_taxonomy.smk"
+# include: "rules/02_read_based_taxonomy.smk"
 # include: "rules/03_read_based_function.smk"
 # include: "rules/04_read_based_phylogeny.smk"
 
@@ -37,10 +40,9 @@ def get_final_output(wildcards):
     final_output = []
 
     final_output.append(results + "01_READ_PREPROCESSING/read_preprocessing_report.tsv")
-    final_output.append(results + "02_READ_BASED_TAXONOMY/metaphlan_combined_profiles_species.tsv")
+    # final_output.append(results + "02_READ_BASED_TAXONOMY/metaphlan_combined_profiles_species.tsv")
 
     return final_output
-
 
 localrules: all
 

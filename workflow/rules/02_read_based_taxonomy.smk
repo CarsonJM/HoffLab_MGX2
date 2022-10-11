@@ -36,27 +36,24 @@ localrules: download_metaphlan_db, merge_metaphlan_profiles, metaphlan_count_fea
 # download metaphlan database
 rule download_metaphlan_db:
     output:
-        resources + "metaphlan/mpa_v30_CHOCOPhlAn_201901.1.bt2"
+        resources + "metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103.1.bt2"
     log:
         results + "00_LOGS/02_download_metaphlan_db.log",
     params:
         mpa_dir=resources + "metaphlan/",
     conda:
-        "../envs/biobakery_workflows.yml"
-    container: 
-        "/gscratch/stf/carsonjm/apptainer/workflows_3.0.0.a.7.sif"
+        "../envs/metaphlan:4.0.2--pyhca03a8a_0.yml"
     benchmark:
         "benchmark/02_READ_BASED_TAXONOMY/download_metaphlan_db.tsv"
     resources:
         runtime="00:30:00",
-        partition="ckpt",
         mem_mb="5000",
     threads:
         config["read_taxonomy"]["metaphlan_threads"]
     shell:
         """
         # download metaphlan database
-        metaphlan --install --index mpa_v30_CHOCOPhlAn_201901 \
+        metaphlan --install --index mpa_vJan21_CHOCOPhlAnSGB_202103 \
         --nproc {threads} \
         --bowtie2db {params.mpa_dir} > {log} 2>&1
         """
@@ -65,27 +62,24 @@ rule download_metaphlan_db:
 # run metaphlan
 rule metaphlan:
     input:
-        mpa_db=resources + "metaphlan/mpa_v30_CHOCOPhlAn_201901.1.bt2",
+        mpa_db=resources + "metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103.1.bt2",
         R1=results + "01_READ_PREPROCESSING/03_kneaddata/{sample}_paired_1.fastq",
         R2=results + "01_READ_PREPROCESSING/03_kneaddata/{sample}_paired_2.fastq",
     output:
         mpa=results + "02_READ_BASED_TAXONOMY/01_metaphlan/{sample}_profile.tsv",
-        bt2=results + "02_READ_BASED_TAXONOMY/01_metaphlan/{sample}.bowtie2.bz2",
         sam=results + "02_READ_BASED_TAXONOMY/01_metaphlan/{sample}.sam.bz2",
     log:
         results + "00_LOGS/02_metaphlan.{sample}.log",
     params:
         extra_args=config["read_taxonomy"]["metaphlan_arguments"],
         mpa_dir=resources + "metaphlan/",
+        index="mpa_vJan21_CHOCOPhlAnSGB_202103"
     conda:
-        "../envs/biobakery_workflows.yml"
-    container: 
-        "/gscratch/stf/carsonjm/apptainer/workflows_3.0.0.a.7.sif"
+        "../envs/metaphlan:4.0.2--pyhca03a8a_0.yml"
     benchmark:
         "benchmark/02_READ_BASED_TAXONOMY/metaphlan_{sample}.tsv"
     resources:
         runtime="10:00:00",
-        partition="ckpt",
         mem_mb="25000",
     threads:
         config["read_taxonomy"]["metaphlan_threads"]
@@ -95,7 +89,7 @@ rule metaphlan:
         metaphlan {input.R1},{input.R2} \
         --input_type fastq \
         --nproc {threads} \
-        --index mpa_v30_CHOCOPhlAn_201901 \
+        --index {params.index} \
         --bowtie2db {params.mpa_dir} \
         --no-map \
         --samout {output.sam} \
@@ -113,9 +107,7 @@ rule merge_metaphlan_profiles:
     params:
         in_dir=results + "02_READ_BASED_TAXONOMY/01_metaphlan/"
     conda:
-        "../envs/biobakery_workflows.yml"
-    container: 
-        "/gscratch/stf/carsonjm/apptainer/workflows_3.0.0.a.7.sif"
+        "../envs/metaphlan:4.0.2--pyhca03a8a_0.yml"
     benchmark:
         "benchmark/02_READ_BASED_TAXONOMY/merge_metaphlan_profiles.tsv"
     resources:
@@ -124,8 +116,7 @@ rule merge_metaphlan_profiles:
     shell:
         """
         # merge metaphlan profiles
-        join_taxonomic_profiles.py --input {params.in_dir} \
-        --output {output} --file_name profile
+        merge_metaphlan_tables.py {input} > {output}
         """
 
 
@@ -136,9 +127,7 @@ rule metaphlan_count_features:
     output:
         results + "02_READ_BASED_TAXONOMY/metaphlan_species_counts.tsv"
     conda:
-        "../envs/biobakery_workflows.yml"
-    container: 
-        "/gscratch/stf/carsonjm/apptainer/workflows_3.0.0.a.7.sif"
+        "../envs/metaphlan:4.0.2--pyhca03a8a_0.yml"
     benchmark:
         "benchmark/02_READ_BASED_TAXONOMY/count_metaphlan_features.tsv"
     resources:
@@ -172,5 +161,5 @@ rule metaphlan_taxa_reduction:
     resources:
         runtime="00:01:00",
         mem_mb="1000",
-    notebook:
-        "../notebooks/02_metaphlan_taxa_reduction.py.ipynb"
+    script:
+        "../scripts/02_metaphlan_taxa_reduction.py"

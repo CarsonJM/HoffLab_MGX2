@@ -2,11 +2,11 @@
 # Pipeline options
 #------------------------------------
 # path to where samples file is stored
-samples_df: "/gscratch/stf/carsonjm/CarsonJM/HoffLab_MGX/config/samples.tsv"
+samples_df: "/home/carsonjm/CarsonJM/HoffLab_MGX2/config/samples.tsv"
 # path to folder where outputs should be stored
-results: "/gscratch/scrubbed/carsonjm/HoffLab_MGX_test_results/"
+results: "/home/carsonjm/results/HoffLab_MGX2_test/"
 # path to directory where large downloads should be stored
-resources: "/gscratch/scrubbed/carsonjm/resources/"
+resources: "/home/carsonjm/resources/"
 
 
 
@@ -29,7 +29,7 @@ read_preprocessing:
 
 ### Read-based taxonomy ###
 read_taxonomy:
-  metaphlan_arguments: ""
+  metaphlan_arguments: "--unclassified_estimation"
   metaphlan_threads: 8
 
 

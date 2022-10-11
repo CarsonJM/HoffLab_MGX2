@@ -117,9 +117,7 @@ rule clumpify:
         R2=results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}.R2.fastq",
         log_dir=results +"00_LOGS/",
     conda:
-        "../envs/bbmap.yml"
-    container:
-        "docker://quay.io/biocontainers/bbmap:38.95--he522d1c_0"
+        "../envs/bbmap:39.00--h5c4e2a8_0.yml"
     benchmark:
         "benchmark/01_READ_PREPROCESSING/clumpify_{sample}.tsv"
     resources:
@@ -128,8 +126,8 @@ rule clumpify:
     shell:
         """
         # unzip input files
-        gunzip {input.R1}
-        gunzip {input.R2}
+        gunzip -f {input.R1}
+        gunzip -f {input.R2}
 
         # run clumpify
         clumpify.sh \
@@ -160,9 +158,7 @@ rule download_kneaddata_db:
     params:
         kneaddata_db=resources + "kneaddata/",
     conda:
-        "../envs/biobakery_workflows.yml"
-    container: 
-        "/gscratch/stf/carsonjm/apptainer/workflows_3.0.0.a.7.sif"
+        "../envs/kneaddata:0.12.0--pyhdfd78af_0.yml"
     benchmark:
         "benchmark/01_READ_PREPROCESSING/download_kneaddata.tsv"
     resources:
@@ -199,9 +195,7 @@ rule kneaddata:
         prefix="{sample}",
         log_dir=results + "00_LOGS/",
     conda:
-        "../envs/biobakery_workflows.yml"
-    container: 
-        "/gscratch/stf/carsonjm/apptainer/workflows_3.0.0.a.7.sif"
+        "../envs/kneaddata:0.12.0--pyhdfd78af_0.yml"
     benchmark:
         "benchmark/01_READ_PREPROCESSING/kneaddata_{sample}.tsv"
     resources:
@@ -211,13 +205,12 @@ rule kneaddata:
     shell:
         """
         # run kneaddata to quality filter and remove host reads
-        kneaddata --input {input.R1} --input {input.R2} \
+        kneaddata --input1 {input.R1} --input2 {input.R2} \
         --output {params.out_dir} \
         --output-prefix {params.prefix} \
         --reference-db {params.human_db} \
         --threads {threads} \
-        --run-trf \
-        --serial \
+        --trimmomatic $CONDA_PREFIX
         --log {log} \
         {params.extra_args}
 
@@ -235,11 +228,15 @@ rule clumpify_read_counts:
         expand(results + "01_READ_PREPROCESSING/02_clumpify/{sample}.log", sample=samples),
     output:
         results + "01_READ_PREPROCESSING/02_clumpify/read_counts.tsv",
+    benchmark:
+        "benchmark/01_READ_PREPROCESSING/clumpify_read_counts.tsv"
+    conda:
+        "../envs/jupyter.yml"
     resources:
         runtime="00:10:00",
         mem_mb="1000",
-    notebook:
-        "../notebooks/01_clumpify_read_counts.py.ipynb"
+    script:
+        "../scripts/01_clumpify_read_counts.py"
 
 
 # determine read counts using kneaddata utils
@@ -251,9 +248,7 @@ rule kneaddata_read_counts:
     params:
         log_dir=results + "01_READ_PREPROCESSING/03_kneaddata/",
     conda:
-        "../envs/biobakery_workflows.yml"
-    container: 
-        "/gscratch/stf/carsonjm/apptainer/workflows_3.0.0.a.7.sif"
+        "../envs/kneaddata:0.12.0--pyhdfd78af_0.yml"
     benchmark:
         "benchmark/01_READ_PREPROCESSING/kneaddata_read_counts.tsv"
     resources:
@@ -280,5 +275,7 @@ rule combine_read_counts:
     resources:
         runtime="00:10:00",
         mem_mb="1000",
-    notebook:
-        "../notebooks/01_combine_read_counts.py.ipynb"
+    conda:
+        "../envs/jupyter.yml"
+    script:
+        "../scripts/01_combine_read_counts.py"

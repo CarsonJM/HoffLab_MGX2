@@ -1,2 +1,2 @@
-sample	replicate	R1	R2	contigs
-I-EMB-006_Abx01_57do	rep1	/gscratch/scrubbed/carsonjm/EMB_FASTQ/A08_S54_R1_001.fastq.gz	/gscratch/scrubbed/carsonjm/EMB_FASTQ/A08_S54_R2_001.fastq.gz	
+sample	replicate	R1	R2
+I-EMB-006_Abx01_57do	rep1	/home/carsonjm/resources/virome_test_data/oral_unenriched_1.fastq.gz	/home/carsonjm/resources/virome_test_data/oral_unenriched_2.fastq.gz

@@ -18,7 +18,7 @@
 
 `conda activate phide_piper`
 
-`conda install -c conda-forge -c bioconda mamba snakemake snakefmt snakedeploy git -y`
+`conda install -c conda-forge -c bioconda snakemake snakefmt snakedeploy git -y`
 
 ## 4. Make a new directory where you want the analysis to take place
 
