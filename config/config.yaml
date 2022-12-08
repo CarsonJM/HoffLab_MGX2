@@ -1,48 +1,55 @@
+---
 #------------------------------------
 # Pipeline options
 #------------------------------------
 # path to where samples file is stored
-samples_df: "/home/carsonjm/CarsonJM/HoffLab_MGX2/config/samples.tsv"
+samples_df: "/gscratch/pedslabs/hofflab/carsonjm/CarsonJM/HoffLab_MGX2/config/samples.tsv"
 # path to folder where outputs should be stored
-results: "/home/carsonjm/results/HoffLab_MGX2_test/"
+results: "/gscratch/pedslabs/hofflab/carsonjm/projects/HoffLab_MGX2_test/"
 # path to directory where large downloads should be stored
-resources: "/home/carsonjm/resources/"
-
-
+resources: "/gscratch/scrubbed/carsonjm/resources/"
 
 #------------------------------------
 # Database options
 #------------------------------------
 
-
-
-
 #------------------------------------
-# Rule customization 
-#------------------------------------ 
-### Preprocessing ###
+# Rule customization
+#------------------------------------
+# Module 1: Read Preprocessing
+include_read_preprocessing_module: True
 read_preprocessing:
-  clumpify_arguments: "dedupe=t optical=t spany=t adjacent=t"
-  kneaddata_arguments: "--remove-intermediate-output --verbose"
+  fastp_arguments: "--disable_adapter_trimming --dedup --correction --overrepresentation_analysis"
+  fastp_threads: 8
+  kneaddata_arguments: ""
   kneaddata_threads: 8
 
-
 ### Read-based taxonomy ###
+include_read_taxonomy_module: True
 read_taxonomy:
   metaphlan_arguments: "--unclassified_estimation"
   metaphlan_threads: 8
-
+  alpha_diversity: "shannon"
+  beta_diversity: "bray-curtis"
 
 ### Read-based function ###
+include_read_function_module: True
 read_function:
   humann_arguments: ""
   humann_threads: 8
 
-
-### Read-based phylogeny ###
-read_phylogeny:
+### Read-based strain analysis ###
+include_read_strain_module: False
+read_strain:
   samples2markers_arguments: ""
-  samples2markers_threads: 4
+  samples2markers_threads: 16
   strainphlan_arguments: ""
   strainphlan_threads: 8
 
+### Read-based pangenome analysis ###
+include_read_pangenome_module: True
+read_pangenome:
+  pangenome_species: ["Streptococcus_mitis"]
+  panphlan_map_arguments: ""
+  panphlan_profile_arguments: ""
+  panphlan_threads: 8

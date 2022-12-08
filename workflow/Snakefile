@@ -27,9 +27,10 @@ container: "docker://condaforge/mambaforge:4.14.0-0"
 # Modularization: rules to include
 # -------------------------------------
 include: "rules/01_read_preprocessing.smk"
-# include: "rules/02_read_based_taxonomy.smk"
-# include: "rules/03_read_based_function.smk"
-# include: "rules/04_read_based_phylogeny.smk"
+include: "rules/02_read_taxonomy.smk"
+include: "rules/03_read_function.smk"
+include: "rules/04_read_strain.smk"
+include: "rules/05_read_pangenome.smk"
 
 
 # -------------------------------------
@@ -39,12 +40,48 @@ def get_final_output(wildcards):
 
     final_output = []
 
-    final_output.append(results + "01_READ_PREPROCESSING/read_preprocessing_report.tsv")
-    # final_output.append(results + "02_READ_BASED_TAXONOMY/metaphlan_combined_profiles_species.tsv")
+    if config["include_read_preprocessing_module"]:
+        final_output.append(results + "01_READ_PREPROCESSING/fastp_multiqc_report.html")
+        final_output.append(results + "01_READ_PREPROCESSING/kneaddata_analysis.svg")
+
+    if config["include_read_taxonomy_module"]:
+        final_output.append(
+            results + "02_READ_BASED_TAXONOMY/metaphlan_species_counts.tsv"
+        )
+        final_output.append(
+            results + "02_READ_BASED_TAXONOMY/metaphlan_merged_profiles_species.tsv"
+        )
+        if len(config["read_taxonomy"]["alpha_diversity"]) > 3:
+            final_output.append(
+                results
+                + "02_READ_BASED_TAXONOMY/02_diversity_metrics/metaphlan_merged_profiles_"
+                + config["read_taxonomy"]["alpha_diversity"]
+                + ".tsv",
+            )
+        if len(config["read_taxonomy"]["beta_diversity"]) > 3:
+            final_output.append(
+                results
+                + "02_READ_BASED_TAXONOMY/02_diversity_metrics/metaphlan_merged_profiles_"
+                + config["read_taxonomy"]["beta_diversity"]
+                + ".tsv",
+            )
+
+    if config["include_read_strain_module"]:
+        final_output.append(
+            results + "04_READ_BASED_STRAIN/02_clades/strainphlan_clades"
+        )
+
+    if config["include_read_pangenome_module"]:
+        final_output += expand(
+            results + "05_READ_BASED_PANGENOME/01_panphlan/{species}_profile.csv",
+            species=config["read_pangenome"]["pangenome_species"],
+        )
 
     return final_output
 
-localrules: all
+
+localrules:
+    all,
 
 
 rule all:

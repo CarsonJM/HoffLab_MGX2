@@ -1,0 +1,6 @@
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - kneaddata=0.10.0=pyhdfd78af_0

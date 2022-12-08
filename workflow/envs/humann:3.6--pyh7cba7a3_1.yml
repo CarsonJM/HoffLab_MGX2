@@ -1,7 +1,6 @@
 channels:
   - conda-forge
   - bioconda
-  - defaults
 
 dependencies:
-  - kneaddata=0.12.0=pyhdfd78af_0
+  - humann=3.6=pyh7cba7a3_1

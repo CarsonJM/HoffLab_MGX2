@@ -1,3 +1,1 @@
-/home/carsonjm/CarsonJM/HoffLab_MGX2/.snakemake/conda/7f7451ffbe923cdfb390eab64681d469_
-/home/carsonjm/CarsonJM/HoffLab_MGX2/.snakemake/conda/cad2e2b78f2899012b697001ef37dddb_
-/home/carsonjm/CarsonJM/HoffLab_MGX2/.snakemake/conda/5e6ca91b5d632792a94c52d9e164ee56_
+

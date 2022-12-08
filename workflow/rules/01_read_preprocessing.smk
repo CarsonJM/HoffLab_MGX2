@@ -1,5 +1,5 @@
 # -------------------------------------
-# Read Preprocessing Module
+# Read Preprocessing Module (if input_data = "reads")
 # -------------------------------------
 import pandas as pd
 
@@ -27,14 +27,21 @@ report: "../report/workflow.rst"
 # -------------------------------------
 # Preprocessing Rules
 # -------------------------------------
-localrules: symlink_reads, merge_replicates, download_kneaddata_db, kneaddata_read_counts, combine_read_counts
+localrules:
+    symlink_input_reads,
+    merge_input_replicates,
+    fastp_multiqc,
+    kneaddata_read_counts,
+    kneaddata_analysis,
 
 
 # -----------------------------------------------------
-# 00 Symlink Reads
+# 00 Symlink inputs
 # -----------------------------------------------------
-# symlink input paths to new paths
-rule symlink_reads:
+# symlink input reads to new paths
+rule symlink_input_reads:
+    message:
+        "Symlinking {wildcards.sample_replicate} input files to new location"
     input:
         R1=lambda wildcards: samples_df[
             (+samples_df["sample"] + "_" + samples_df["replicate"])
@@ -45,16 +52,16 @@ rule symlink_reads:
             == wildcards.sample_replicate
         ]["R2"].iloc[0],
     output:
-        R1=results + "00_INPUT/{sample_replicate}_1.fastq.gz",
-        R2=results + "00_INPUT/{sample_replicate}_2.fastq.gz",
+        R1=results + "00_INPUT/{sample_replicate}.R1.fastq.gz",
+        R2=results + "00_INPUT/{sample_replicate}.R2.fastq.gz",
     benchmark:
         "benchmark/01_READ_PREPROCESSING/symlink_reads_{sample_replicate}.tsv"
     resources:
         runtime="00:00:10",
-        mem_mb="100",
+        mem_mb="1000",
     shell:
         """
-        # symlink input paths to renamed files
+        # symlink input reads to specified paths
         ln -s {input.R1} {output.R1}
         ln -s {input.R2} {output.R2}
         """
@@ -63,116 +70,154 @@ rule symlink_reads:
 # -----------------------------------------------------
 # 01 Merge Replicates
 # -----------------------------------------------------
-# identify replicates
+# identify replicate reads
 sample_replicate = samples_df[["sample", "replicate"]]
 sample_replicate_dictionary = sample_replicate.set_index("sample").to_dict()[
     "replicate"
 ]
 
 
-# merge replicate files into single file
-rule merge_replicates:
+# merge sample replicates into single file
+rule merge_input_replicates:
+    message:
+        "Merging {wildcards.sample} replicates into one file"
     input:
         R1=lambda wildcards: expand(
-            results + "00_INPUT/{{sample}}_{replicate}_1.fastq.gz",
+            results + "00_INPUT/{{sample}}_{replicate}.R1.fastq.gz",
             replicate=sample_replicate_dictionary[wildcards.sample],
         ),
         R2=lambda wildcards: expand(
-            results + "00_INPUT/{{sample}}_{replicate}_2.fastq.gz",
+            results + "00_INPUT/{{sample}}_{replicate}.R2.fastq.gz",
             replicate=sample_replicate_dictionary[wildcards.sample],
         ),
     output:
-        R1=temp(results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}.R1.fastq.gz"),
-        R2=temp(results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}.R2.fastq.gz"),
+        R1=results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}.R1.fastq.gz",
+        R2=results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}.R2.fastq.gz",
     benchmark:
         "benchmark/01_READ_PREPROCESSING/merge_replicates_{sample}.tsv"
     resources:
-        runtime="00:00:10",
-        mem_mb="100",
+        runtime="00:01:00",
+        mem_mb="1000",
     shell:
         """
-        # symlink input paths to renamed files
+        # symlink replicates into one combined file
         ln -s {input.R1} {output.R1}
         ln -s {input.R2} {output.R2}
         """
 
 
 # -----------------------------------------------------
-# 02 Clumpify
+# 02 fastp
 # -----------------------------------------------------
-# deduplicate reads with clumpify
-rule clumpify:
+# trim and deduplicate reads with fastp
+rule fastp:
+    message:
+        "Trimming and deduplicating {wildcards.sample} with fastp"
     input:
         R1=results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}.R1.fastq.gz",
         R2=results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}.R2.fastq.gz",
     output:
-        R1=results + "01_READ_PREPROCESSING/02_clumpify/{sample}.R1.fastq",
-        R2=results + "01_READ_PREPROCESSING/02_clumpify/{sample}.R2.fastq",
-        log=results + "01_READ_PREPROCESSING/02_clumpify/{sample}.log",
-    log:
-        results + "00_LOGS/01_clumpify.{sample}.log"
+        R1=results + "01_READ_PREPROCESSING/02_fastp/{sample}.R1.fastq.gz",
+        R2=results + "01_READ_PREPROCESSING/02_fastp/{sample}.R2.fastq.gz",
+        report=results + "01_READ_PREPROCESSING/02_fastp/{sample}_fastp.json",
     params:
-        extra_args=config['read_preprocessing']['clumpify_arguments'],
-        R1=results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}.R1.fastq",
-        R2=results + "01_READ_PREPROCESSING/01_merge_replicates/{sample}.R2.fastq",
-        log_dir=results +"00_LOGS/",
-    conda:
-        "../envs/bbmap:39.00--h5c4e2a8_0.yml"
+        extra_args=config["read_preprocessing"]["fastp_arguments"],
+        html=results + "01_READ_PREPROCESSING/02_fastp/{sample}_fastp.html",
+    # conda:
+    #     "../envs/fastp:0.23.2--h79da9fb_0.yml"
+    container:
+        "docker://quay.io/biocontainers/fastp:0.23.2--h79da9fb_0"
     benchmark:
-        "benchmark/01_READ_PREPROCESSING/clumpify_{sample}.tsv"
+        "benchmark/01_READ_PREPROCESSING/fastp_{sample}.tsv"
     resources:
-        runtime="04:00:00",
-        mem_mb="5000",
+        runtime="00:15:00",
+        mem_mb="10000",
+    threads: config["read_preprocessing"]["fastp_threads"]
     shell:
         """
-        # unzip input files
-        gunzip -f {input.R1}
-        gunzip -f {input.R2}
-
-        # run clumpify
-        clumpify.sh \
-        in={params.R1} \
-        in2={params.R2} \
-        out={output.R1} \
-        out2={output.R2} \
-        {params.extra_args} > {log} 2>&1
-
-        # copy log to log dir
-        cp {log} {output.log}
+        # run fastp to trim and remove 
+        fastp --in1 {input.R1} \
+        --in2 {input.R2} \
+        --out1 {output.R1} \
+        --out2 {output.R2} \
+        --json {output.report} \
+        --html {params.html} \
+        --thread {threads} \
+        {params.extra_args}
         """
 
-# -----------------------------------------------------
-# 03 KneadData
-# -----------------------------------------------------
-# download biobakery workflow databases
-rule download_kneaddata_db:
+
+# generate report for trimming and deduplication
+rule fastp_multiqc:
+    message:
+        "Generating a MULTIQC report using fastp results"
+    input:
+        expand(
+            results + "01_READ_PREPROCESSING/02_fastp/{sample}_fastp.json",
+            sample=samples,
+        ),
     output:
-        resources + "kneaddata/hg37dec_v0.1.1.bt2",
-        resources + "kneaddata/hg37dec_v0.1.2.bt2",
-        resources + "kneaddata/hg37dec_v0.1.3.bt2",
-        resources + "kneaddata/hg37dec_v0.1.4.bt2",
-        resources + "kneaddata/hg37dec_v0.1.rev.1.bt2",
-        resources + "kneaddata/hg37dec_v0.1.rev.2.bt2",
-    log:
-        results + "00_LOGS/01_download_kneaddata_database.log",
+        report(
+            results + "01_READ_PREPROCESSING/fastp_multiqc_report.html",
+            category="Step 01: Read preprocessing",
+        ),
     params:
-        kneaddata_db=resources + "kneaddata/",
-    conda:
-        "../envs/kneaddata:0.12.0--pyhdfd78af_0.yml"
+        fastp_dir=results + "01_READ_PREPROCESSING/02_fastp/",
+        fastp_out=results + "01_READ_PREPROCESSING/02_fastp/multiqc_report.html",
+    # conda:
+    #     "../envs/multiqc:1.12--pyhdfd78af_0.yml"
+    container:
+        "docker://quay.io/biocontainers/multiqc:1.12--pyhdfd78af_0"
     benchmark:
-        "benchmark/01_READ_PREPROCESSING/download_kneaddata.tsv"
+        "benchmark/01_READ_PREPROCESSING/fastp_multiqc.tsv"
     resources:
         runtime="00:10:00",
         mem_mb="1000",
     shell:
         """
-        # download human genome reference to desired directory
-        kneaddata_database --download human_genome bowtie2 {params.kneaddata_db} > {log} 2>&1
+        multiqc {params.fastp_dir} \
+        -o {params.fastp_dir} -f
+
+        mv {params.fastp_out} {output}
         """
 
 
-# Quality filter and remove human reads with kneaddata
+# -----------------------------------------------------
+# 03 KneadData
+# -----------------------------------------------------
+# download and build kneaddata human bowtie2 database
+rule download_kneaddata_database:
+    message:
+        "Downloading human genome bowtie2 database for KneadData"
+    output:
+        resources + "kneaddata/hg37dec_v0.1.1.bt2",
+        resources + "kneaddata/hg37dec_v0.1.2.bt2",
+        resources + "kneaddata/hg37dec_v0.1.3.bt2",
+        resources + "kneaddata/hg37dec_v0.1.4.bt2",
+        resources + "kneaddata/hg37dec_v0.1.rev.1.bt2",
+        resources + "kneaddata/hg37dec_v0.1.rev.2.bt2",
+    params:
+        kneaddata_db=resources + "kneaddata/",
+    # conda:
+    #     "../envs/kneaddata:0.10.0--pyhdfd78af_0.yml"
+    container:
+        "docker://quay.io/biocontainers/kneaddata:0.10.0--pyhdfd78af_0"
+    benchmark:
+        "benchmark/01_READ_PREPROCESSING/download_kneaddata_database.tsv"
+    resources:
+        runtime="00:30:00",
+        mem_mb="10000",
+    shell:
+        """
+        # download human genome reference to desired directory
+        kneaddata_database --download human_genome bowtie2 {params.kneaddata_db}
+        """
+
+
+# Remove human reads with kneaddata
 rule kneaddata:
+    message:
+        "Running KneadData on {wildcards.sample} to remove human reads"
     input:
         resources + "kneaddata/hg37dec_v0.1.1.bt2",
         resources + "kneaddata/hg37dec_v0.1.2.bt2",
@@ -180,102 +225,101 @@ rule kneaddata:
         resources + "kneaddata/hg37dec_v0.1.4.bt2",
         resources + "kneaddata/hg37dec_v0.1.rev.1.bt2",
         resources + "kneaddata/hg37dec_v0.1.rev.2.bt2",
-        R1=results + "01_READ_PREPROCESSING/02_clumpify/{sample}.R1.fastq",
-        R2=results + "01_READ_PREPROCESSING/02_clumpify/{sample}.R2.fastq",
+        R1=results + "01_READ_PREPROCESSING/02_fastp/{sample}.R1.fastq.gz",
+        R2=results + "01_READ_PREPROCESSING/02_fastp/{sample}.R2.fastq.gz",
     output:
-        R1=results + "01_READ_PREPROCESSING/03_kneaddata/{sample}_paired_1.fastq",
-        R2=results + "01_READ_PREPROCESSING/03_kneaddata/{sample}_paired_2.fastq",
         log=results + "01_READ_PREPROCESSING/03_kneaddata/{sample}.log",
-    log:
-        results + "00_LOGS/01_kneaddata.{sample}.log"
+        R1=results + "01_READ_PREPROCESSING/03_kneaddata/{sample}_paired_1.fastq.gz",
+        R2=results + "01_READ_PREPROCESSING/03_kneaddata/{sample}_paired_2.fastq.gz",
     params:
         out_dir=results + "01_READ_PREPROCESSING/03_kneaddata/",
         human_db=resources + "kneaddata/",
         extra_args=config["read_preprocessing"]["kneaddata_arguments"],
         prefix="{sample}",
-        log_dir=results + "00_LOGS/",
-    conda:
-        "../envs/kneaddata:0.12.0--pyhdfd78af_0.yml"
+        R1=results + "01_READ_PREPROCESSING/03_kneaddata/{sample}_paired_1.fastq",
+        R2=results + "01_READ_PREPROCESSING/03_kneaddata/{sample}_paired_2.fastq",
+    # conda:
+    #     "../envs/kneaddata:0.10.0--pyhdfd78af_0.yml"
+    container:
+        "docker://quay.io/biocontainers/kneaddata:0.10.0--pyhdfd78af_0"
     benchmark:
         "benchmark/01_READ_PREPROCESSING/kneaddata_{sample}.tsv"
     resources:
-        runtime="4:00:00",
-        mem_mb="5000",
+        runtime="01:00:00",
+        mem_mb="10000",
     threads: config["read_preprocessing"]["kneaddata_threads"]
     shell:
         """
         # run kneaddata to quality filter and remove host reads
-        kneaddata --input1 {input.R1} --input2 {input.R2} \
+        kneaddata --input {input.R1} --input {input.R2} \
         --output {params.out_dir} \
         --output-prefix {params.prefix} \
         --reference-db {params.human_db} \
         --threads {threads} \
-        --trimmomatic $CONDA_PREFIX
-        --log {log} \
+        --bypass-trim \
+        --bypass-trf \
+        --log {output.log} \
+        --run-fastqc-end \
         {params.extra_args}
 
-        # copy log to log dir
-        cp {log} {output.log}
+
+        gzip {params.R1}
+        gzip {params.R2}
         """
 
 
-# -----------------------------------------------------
-# 04 Read Counts
-# -----------------------------------------------------
-# determine clumpify read counts
-rule clumpify_read_counts:
-    input:
-        expand(results + "01_READ_PREPROCESSING/02_clumpify/{sample}.log", sample=samples),
-    output:
-        results + "01_READ_PREPROCESSING/02_clumpify/read_counts.tsv",
-    benchmark:
-        "benchmark/01_READ_PREPROCESSING/clumpify_read_counts.tsv"
-    conda:
-        "../envs/jupyter.yml"
-    resources:
-        runtime="00:10:00",
-        mem_mb="1000",
-    script:
-        "../scripts/01_clumpify_read_counts.py"
-
-
-# determine read counts using kneaddata utils
+# Count reads before and after host removal
 rule kneaddata_read_counts:
+    message:
+        "Generating read counts before and after human removal"
     input:
-        expand(results + "01_READ_PREPROCESSING/03_kneaddata/{sample}.log", sample=samples),
+        expand(
+            results + "01_READ_PREPROCESSING/03_kneaddata/{sample}.log", sample=samples
+        ),
     output:
-        results + "01_READ_PREPROCESSING/03_kneaddata/read_counts.tsv",
+        results + "01_READ_PREPROCESSING/kneaddata_read_counts.tsv",
     params:
-        log_dir=results + "01_READ_PREPROCESSING/03_kneaddata/",
-    conda:
-        "../envs/kneaddata:0.12.0--pyhdfd78af_0.yml"
+        in_dir=results + "01_READ_PREPROCESSING/03_kneaddata/",
+    # conda:
+    #     "../envs/kneaddata:0.10.0--pyhdfd78af_0.yml"
+    container:
+        "docker://quay.io/biocontainers/kneaddata:0.10.0--pyhdfd78af_0"
     benchmark:
         "benchmark/01_READ_PREPROCESSING/kneaddata_read_counts.tsv"
     resources:
-        runtime="00:10:00",
+        runtime="00:01:00",
         mem_mb="1000",
     shell:
         """
         # generate read counts from kneaddata log files
         kneaddata_read_count_table \
-        --input {params.log_dir} \
+        --input {params.in_dir} \
         --output {output}
         """
 
 
-# combine clumpify and kneaddata read counts
-rule combine_read_counts:
+# -----------------------------------------------------
+# 04 Analysis
+# -----------------------------------------------------
+# generate report for human read removal
+rule kneaddata_analysis:
+    message:
+        "Visualizing read counts before and after human read removal"
     input:
-        clumpify=results + "01_READ_PREPROCESSING/02_clumpify/read_counts.tsv",
-        kneaddata=results + "01_READ_PREPROCESSING/03_kneaddata/read_counts.tsv",
+        results + "01_READ_PREPROCESSING/kneaddata_read_counts.tsv",
     output:
-        results + "01_READ_PREPROCESSING/read_preprocessing_report.tsv",
+        report(
+            results + "01_READ_PREPROCESSING/kneaddata_analysis.svg",
+            category="Step 01: Read preprocessing",
+        ),
+    # conda:
+    #     "../envs/scripts.yml"
+    container:
+        "/gscratch/pedslabs/hofflab/carsonjm/apptainer/scripts.sif"
     benchmark:
-        "benchmark/01_READ_PREPROCESSING/combine_read_counts.tsv"
+        "benchmark/01_READ_PREPROCESSING/kneaddata_analysis.tsv"
     resources:
         runtime="00:10:00",
         mem_mb="1000",
-    conda:
-        "../envs/jupyter.yml"
     script:
-        "../scripts/01_combine_read_counts.py"
+        "../scripts/01_kneaddata_analysis.py"

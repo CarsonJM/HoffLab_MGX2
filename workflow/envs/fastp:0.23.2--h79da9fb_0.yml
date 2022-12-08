@@ -1,7 +1,6 @@
 channels:
   - conda-forge
   - bioconda
-  - defaults
 
 dependencies:
-  - bbmap=39.00=h5c4e2a8_0
+  - fastp=0.23.2=h79da9fb_0

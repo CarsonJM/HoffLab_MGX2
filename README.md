@@ -1,5 +1,7 @@
-# `PhIde PipeR`
+# HoffLab MGX
 
-**(*PH*age *IDE*ntification *PIPE*line *R*epository)**
+**(Lucas Hoffman Lab Metagenomics Pipeline)**
 
-This repository contains a snakemake workflow that utilizes state-of-the-art tools to identify free-phages and prophages in metagenomic sequences (viral enriched and whole-community).
+This repository contains a snakemake workflow that utilizes commonly used tools for preprocessing, taxonomic, functional, strain-level, and pangenome analysis on the Hyak HPC at UW.
+
+For instructions on running the pipeline, view the wiki: [HoffLab_MGX2 Wiki](https://github.com/CarsonJM/HoffLab_MGX2/wiki)

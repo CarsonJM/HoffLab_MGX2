@@ -27,21 +27,23 @@ report: "../report/workflow.rst"
 # -------------------------------------
 # Read-Based Function Rules
 # -------------------------------------
+localrules:
+    merge_read_pairs,
+
+
 # -----------------------------------------------------
 # 01 HUManN
 # -----------------------------------------------------
 # download humann database
 rule download_humann_db:
     output:
-        resources + "uniref/uniref90_201901.dmnd"
-    log:
-        results + "00_LOGS/03_download_humann_db.log",
+        resources + "uniref/uniref90_201901.dmnd",
     params:
         humann_dir=resources + "humann/",
-    conda:
-        "../envs/biobakery_workflows.yml"
-    container: 
-        "docker://biobakery/workflows:3.0.0.a.7"
+    # conda:
+    #     "../envs/humann:3.6--pyh7cba7a3_1.yml"
+    container:
+        "docker://quay.io/biocontainers/humann:3.6--pyh7cba7a3_1"
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/download_humann_db.tsv"
     resources:
@@ -63,12 +65,10 @@ rule download_humann_db:
 # merge read pairs
 rule merge_read_pairs:
     input:
-        R1=results + "01_READ_PREPROCESSING/03_kneaddata/{sample}_paired_1.fastq",
-        R2=results + "01_READ_PREPROCESSING/03_kneaddata/{sample}_paired_2.fastq",
+        R1=results + "01_READ_PREPROCESSING/03_kneaddata/{sample}_paired_1.fastq.gz",
+        R2=results + "01_READ_PREPROCESSING/03_kneaddata/{sample}_paired_2.fastq.gz",
     output:
-        results + "03_READ_BASED_FUNCTION/01_merge_pairs/{sample}.fastq"
-    log:
-        results + "00_LOGS/03_merge_pairs.{sample}.log"
+        results + "03_READ_BASED_FUNCTION/01_merge_pairs/{sample}.fastq.gz",
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/merge_pairs_{sample}.tsv"
     resources:
@@ -76,7 +76,7 @@ rule merge_read_pairs:
         mem_mb="5000",
     shell:
         """
-        # merge read pairs for kneaddata
+        # merge read pairs for humann
         cat {input.R1} {input.R2} > {output}
         """
 
@@ -84,32 +84,29 @@ rule merge_read_pairs:
 # run humann on all samples
 rule humann:
     input:
-        seq=results + "03_READ_BASED_FUNCTION/01_merge_pairs/{sample}.fastq",
+        seq=results + "03_READ_BASED_FUNCTION/01_merge_pairs/{sample}.fastq.gz",
         mpa=results + "02_READ_BASED_TAXONOMY/01_metaphlan/{sample}_profile.tsv",
-        humann_db=resources + "uniref/uniref90_201901.dmnd"
+        humann_db=resources + "uniref/uniref90_201901.dmnd",
     output:
         gf=results + "03_READ_BASED_FUNCTION/02_humann/{sample}_genefamilies.tsv",
         pa=results + "03_READ_BASED_FUNCTION/02_humann/{sample}_pathabundance.tsv",
         pc=results + "03_READ_BASED_FUNCTION/02_humann/{sample}_pathcoverage.tsv",
         log=results + "03_READ_BASED_FUNCTION/03_humann_logs/{sample}.log",
-    log:
-        results + "00_LOGS/03_humann.{sample}.log",
     params:
         out_dir=results + "03_READ_BASED_FUNCTION/02_humann/",
         cpa_dir=resources + "humann/chocophlan/",
         uniref_dir=resources + "humann/uniref/",
-        map_dir=resources + "humann/utility_mapping/"
-    conda:
-        "../envs/biobakery_workflows.yml"
-    container: 
-        "docker://biobakery/workflows:3.0.0.a.7"
+        map_dir=resources + "humann/utility_mapping/",
+    # conda:
+    #     "../envs/humann:3.6--pyh7cba7a3_1.yml"
+    container:
+        "docker://quay.io/biocontainers/humann:3.6--pyh7cba7a3_1"
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/humann_{sample}.tsv"
     resources:
         runtime="48:00:00",
         mem_mb="50000",
-    threads:
-        config["read_function"]["humann_threads"]
+    threads: config["read_function"]["humann_threads"]
     shell:
         """
         # run humann on samples
@@ -132,15 +129,19 @@ rule humann:
 # get counts from humann
 rule get_counts_from_humann_logs:
     input:
-        expand(results + "03_READ_BASED_FUNCTION/03_humann_logs/{sample}.log", sample=samples)
+        expand(
+            results + "03_READ_BASED_FUNCTION/03_humann_logs/{sample}.log",
+            sample=samples,
+        ),
     output:
-        results + "03_READ_BASED_FUNCTION/humann_read_alignments.tsv"
+        results + "03_READ_BASED_FUNCTION/humann_read_alignments.tsv",
     params:
-        in_dir=results + "03_READ_BASED_FUNCTION/03_humann_logs/"
-    conda:
-        "../envs/biobakery_workflows.yml"
-    container: 
-        "docker://biobakery/workflows:3.0.0.a.7"
+        script="workflow/scripts/03_get_counts_from_humann_logs.py",
+        in_dir=results + "03_READ_BASED_FUNCTION/03_humann_logs/",
+    # conda:
+    #     "../envs/humann:3.6--pyh7cba7a3_1.yml"
+    container:
+        "docker://quay.io/biocontainers/humann:3.6--pyh7cba7a3_1"
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/get_counts_from_humann_logs.tsv"
     resources:
@@ -149,7 +150,7 @@ rule get_counts_from_humann_logs:
     shell:
         """
         # count reads aligned to species
-        get_counts_from_humann_logs.py --input {params.in_dir} \
+        python {params.script} --input {params.in_dir} \
         --output {output}
         """
 
@@ -159,13 +160,11 @@ rule humann_regroup_gene_families:
     input:
         results + "03_READ_BASED_FUNCTION/02_humann/{sample}_genefamilies.tsv",
     output:
-        results + "03_READ_FUNCTION/02_humann/{sample}_ecs.tsv"
-    log:
-        results + "00_LOGS/03_humann_regroup_table.{sample}.log",
-    conda:
-        "../envs/biobakery_workflows.yml"
-    container: 
-        "docker://biobakery/workflows:3.0.0.a.7"
+        results + "03_READ_FUNCTION/02_humann/{sample}_ecs.tsv",
+    # conda:
+    #     "../envs/humann:3.6--pyh7cba7a3_1.yml"
+    container:
+        "docker://quay.io/biocontainers/humann:3.6--pyh7cba7a3_1"
     benchmark:
         "benchmark/03_READ_FUNCTION/humann_regoup_table_{sample}.tsv"
     resources:
@@ -183,21 +182,27 @@ rule humann_regroup_gene_families:
 # merge unnormalized tables
 rule humann_join_unnormalized_tables:
     input:
-        gf=expand(results + "03_READ_BASED_FUNCTION/02_humann/{sample}_genefamilies.tsv", sample=samples),
-        ecs=expand(results + "03_READ_FUNCTION/02_humann/{sample}_ecs.tsv", sample=samples),
-        pa=expand(results + "03_READ_BASED_FUNCTION/02_humann/{sample}_pathabundance.tsv", sample=samples),
+        gf=expand(
+            results + "03_READ_BASED_FUNCTION/02_humann/{sample}_genefamilies.tsv",
+            sample=samples,
+        ),
+        ecs=expand(
+            results + "03_READ_FUNCTION/02_humann/{sample}_ecs.tsv", sample=samples
+        ),
+        pa=expand(
+            results + "03_READ_BASED_FUNCTION/02_humann/{sample}_pathabundance.tsv",
+            sample=samples,
+        ),
     output:
         gf=results + "03_READ_BASED_FUNCTION/unnormalized_genefamilies.tsv",
         ecs=results + "03_READ_FUNCTION/unnormalized_ecs.tsv",
         pa=results + "03_READ_BASED_FUNCTION/unnormalized_pathabundance.tsv",
     params:
-        in_dir=results + "03_READ_BASED_FUNCTION/02_humann/"
-    log:
-        results + "00_LOGS/03_humann_join_unnormalized.log",
-    conda:
-        "../envs/biobakery_workflows.yml"
-    container: 
-        "docker://biobakery/workflows:3.0.0.a.7"
+        in_dir=results + "03_READ_BASED_FUNCTION/02_humann/",
+    # conda:
+    #     "../envs/humann:3.6--pyh7cba7a3_1.yml"
+    container:
+        "docker://quay.io/biocontainers/humann:3.6--pyh7cba7a3_1"
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/humann_join_unnormalized.tsv"
     resources:
@@ -229,15 +234,15 @@ rule humann_renorm_tables:
         ecs=results + "03_READ_FUNCTION/02_humann/{sample}_ecs.tsv",
         pa=results + "03_READ_BASED_FUNCTION/02_humann/{sample}_pathabundance.tsv",
     output:
-        gf=results + "03_READ_BASED_FUNCTION/04_humann_renorm/{sample}_genefamilies_renorm.tsv",
+        gf=results
+        + "03_READ_BASED_FUNCTION/04_humann_renorm/{sample}_genefamilies_renorm.tsv",
         ecs=results + "03_READ_FUNCTION/04_humann_renorm/{sample}_ecs_renorm.tsv",
-        pa=results + "03_READ_BASED_FUNCTION/04_humann_renorm/{sample}_pathabundance_renorm.tsv",
-    log:
-        results + "00_LOGS/03_humann_renorm.log",
-    conda:
-        "../envs/biobakery_workflows.yml"
-    container: 
-        "docker://biobakery/workflows:3.0.0.a.7"
+        pa=results
+        + "03_READ_BASED_FUNCTION/04_humann_renorm/{sample}_pathabundance_renorm.tsv",
+    # conda:
+    #     "../envs/humann:3.6--pyh7cba7a3_1.yml"
+    container:
+        "docker://quay.io/biocontainers/humann:3.6--pyh7cba7a3_1"
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/humann_renorm_{sample}.tsv"
     resources:
@@ -268,21 +273,30 @@ rule humann_renorm_tables:
 # merge unnormalized tables
 rule humann_join_normalized_tables:
     input:
-        gf=expand(results + "03_READ_BASED_FUNCTION/04_humann_renorm/{sample}_genefamilies_renorm.tsv", sample=samples),
-        ecs=expand(results + "03_READ_FUNCTION/04_humann_renorm/{sample}_ecs_renorm.tsv", sample=samples),
-        pa=expand(results + "03_READ_BASED_FUNCTION/04_humann_renorm/{sample}_pathabundance_renorm.tsv", sample=samples),
+        gf=expand(
+            results
+            + "03_READ_BASED_FUNCTION/04_humann_renorm/{sample}_genefamilies_renorm.tsv",
+            sample=samples,
+        ),
+        ecs=expand(
+            results + "03_READ_FUNCTION/04_humann_renorm/{sample}_ecs_renorm.tsv",
+            sample=samples,
+        ),
+        pa=expand(
+            results
+            + "03_READ_BASED_FUNCTION/04_humann_renorm/{sample}_pathabundance_renorm.tsv",
+            sample=samples,
+        ),
     output:
         gf=results + "03_READ_BASED_FUNCTION/genefamilies_relab.tsv",
         ecs=results + "03_READ_FUNCTION/ecs_relab.tsv",
         pa=results + "03_READ_BASED_FUNCTION/pathabundance_relab.tsv",
     params:
-        in_dir=results + "03_READ_BASED_FUNCTION/04_humann_renorm/"
-    log:
-        results + "00_LOGS/03_humann_join_normalized.log",
-    conda:
-        "../envs/biobakery_workflows.yml"
-    container: 
-        "docker://biobakery/workflows:3.0.0.a.7"
+        in_dir=results + "03_READ_BASED_FUNCTION/04_humann_renorm/",
+    # conda:
+    #     "../envs/humann:3.6--pyh7cba7a3_1.yml"
+    container:
+        "docker://quay.io/biocontainers/humann:3.6--pyh7cba7a3_1"
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/humann_join_normalized.tsv"
     resources:
@@ -314,15 +328,17 @@ rule humann_count_features:
         ecs=results + "03_READ_FUNCTION/ecs_relab.tsv",
         pa=results + "03_READ_BASED_FUNCTION/pathabundance_relab.tsv",
     output:
-        gf=results + "03_READ_BASED_FUNCTION/05_humann_feature_counts/genefamilies_relab_counts.tsv",
+        gf=results
+        + "03_READ_BASED_FUNCTION/05_humann_feature_counts/genefamilies_relab_counts.tsv",
         ecs=results + "03_READ_FUNCTION/05_humann_feature_counts/ecs_relab_counts.tsv",
-        pa=results + "03_READ_BASED_FUNCTION/05_humann_feature_counts/pathabundance_relab_counts.tsv",
-    log:
-        results + "00_LOGS/03_humann_count_features.log",
-    conda:
-        "../envs/biobakery_workflows.yml"
-    container: 
-        "docker://biobakery/workflows:3.0.0.a.7"
+        pa=results
+        + "03_READ_BASED_FUNCTION/05_humann_feature_counts/pathabundance_relab_counts.tsv",
+    params:
+        script="workflow/scripts/02_metaphlan_count_features.py",
+    # conda:
+    #     "../envs/humann:3.6--pyh7cba7a3_1.yml"
+    container:
+        "docker://quay.io/biocontainers/humann:3.6--pyh7cba7a3_1"
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/humann_count_features.tsv"
     resources:
@@ -331,21 +347,21 @@ rule humann_count_features:
     shell:
         """
         # count features
-        count_features.py --input {params.input.gf} \
+        python {params.script} --input {params.input.gf} \
         --output {output.gf} \
         --reduce-sample-name \
         --ignore-un-features \
         --ignore-stratification
 
         # count features
-        count_features.py --input {params.input.ecs} \
+        python {params.script} --input {params.input.ecs} \
         --output {output.ecs} \
         --reduce-sample-name \
         --ignore-un-features \
         --ignore-stratification
 
         # count features
-        count_features.py --input {params.input.pa} \
+        python {params.script} --input {params.input.pa} \
         --output {output.pa} \
         --reduce-sample-name \
         --ignore-un-features \
@@ -356,19 +372,19 @@ rule humann_count_features:
 # merge feature tables
 rule humann_join_feature_counts_tables:
     input:
-        gf=results + "03_READ_BASED_FUNCTION/05_humann_feature_counts/genefamilies_relab_counts.tsv",
+        gf=results
+        + "03_READ_BASED_FUNCTION/05_humann_feature_counts/genefamilies_relab_counts.tsv",
         ecs=results + "03_READ_FUNCTION/05_humann_feature_counts/ecs_relab_counts.tsv",
-        pa=results + "03_READ_BASED_FUNCTION/05_humann_feature_counts/pathabundance_relab_counts.tsv",
+        pa=results
+        + "03_READ_BASED_FUNCTION/05_humann_feature_counts/pathabundance_relab_counts.tsv",
     output:
         results + "03_READ_BASED_FUNCTION/merged_relab_counts.tsv",
     params:
-        in_dir=results + "03_READ_BASED_FUNCTION/05_humann_feature_counts/"
-    log:
-        results + "00_LOGS/03_humann_join_feature_counts_tables.log",
-    conda:
-        "../envs/biobakery_workflows.yml"
-    container: 
-        "docker://biobakery/workflows:3.0.0.a.7"
+        in_dir=results + "03_READ_BASED_FUNCTION/05_humann_feature_counts/",
+    # conda:
+    #     "../envs/humann:3.6--pyh7cba7a3_1.yml"
+    container:
+        "docker://quay.io/biocontainers/humann:3.6--pyh7cba7a3_1"
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/humann_join_feature_counts_tables.tsv"
     resources:
