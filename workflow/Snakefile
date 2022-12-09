@@ -49,8 +49,10 @@ def get_final_output(wildcards):
             results + "02_READ_BASED_TAXONOMY/metaphlan_species_counts.tsv"
         )
         final_output.append(
-            results + "02_READ_BASED_TAXONOMY/metaphlan_merged_profiles_species.tsv"
+            results
+            + "02_READ_BASED_TAXONOMY/03_taxa_reduction/metaphlan_merged_profiles_species.tsv"
         )
+
         if len(config["read_taxonomy"]["alpha_diversity"]) > 3:
             final_output.append(
                 results
@@ -58,6 +60,7 @@ def get_final_output(wildcards):
                 + config["read_taxonomy"]["alpha_diversity"]
                 + ".tsv",
             )
+
         if len(config["read_taxonomy"]["beta_diversity"]) > 3:
             final_output.append(
                 results
@@ -66,14 +69,23 @@ def get_final_output(wildcards):
                 + ".tsv",
             )
 
+    if config["include_read_function_module"]:
+        final_output.append(
+            results + "03_READ_BASED_FUNCTION/merged_relab_counts.tsv",
+        )
+
     if config["include_read_strain_module"]:
         final_output.append(
             results + "04_READ_BASED_STRAIN/02_clades/strainphlan_clades"
         )
+        final_output += expand(
+            results + "04_READ_BASED_STRAIN/03_strainphlan/{species}.info",
+            species=config["read_strain"]["strainphlan_species"],
+        )
 
     if config["include_read_pangenome_module"]:
         final_output += expand(
-            results + "05_READ_BASED_PANGENOME/01_panphlan/{species}_profile.csv",
+            results + "05_READ_BASED_PANGENOME/01_panphlan/{species}_profile.tsv",
             species=config["read_pangenome"]["pangenome_species"],
         )
 

@@ -10,6 +10,7 @@ def format_taxon_level(metaphlan_profile, taxonomic_level, output, number, delim
     column = level_filtered[taxonomic_level]
     level_filtered.drop(taxonomic_level, inplace=True, axis=1)
     level_filtered.insert(loc=0, column=taxonomic_level, value=column)
+    level_filtered.drop('clade_name', inplace=True, axis=1)
     level_filtered.to_csv(output, sep='\t', index=False)
 
 metaphlan_phylum = format_taxon_level(metaphlan_data, 'phylum', str(snakemake.output.phylum), 1, 'p__')

@@ -2,3 +2,5 @@
 dag.pdf
 slurm_logs/*
 benchmark/*
+*.java*
+*.cache*

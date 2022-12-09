@@ -44,7 +44,8 @@ rule download_metaphlan_db:
     message:
         "Downloading MetaPhlan4 database mpa_vJan21_CHOCOPhlAnSGB_202103"
     output:
-        resources + "metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103.1.bt2l",
+        bowtie2_db=resources + "metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103.1.bt2l",
+        spa_db=resources + "metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103.pkl",
     params:
         mpa_dir=resources + "metaphlan/",
     # conda:
@@ -90,8 +91,8 @@ rule metaphlan:
     benchmark:
         "benchmark/02_READ_BASED_TAXONOMY/metaphlan_{sample}.tsv"
     resources:
-        runtime="10:00:00",
-        mem_mb="25000",
+        runtime=config["read_taxonomy"]["metaphlan_runtime"],
+        mem_mb=config["read_taxonomy"]["metaphlan_memory"],
     threads: config["read_taxonomy"]["metaphlan_threads"]
     shell:
         """
@@ -124,7 +125,7 @@ rule sgb_to_gtdb_taxonomy:
         "benchmark/02_READ_BASED_TAXONOMY/sgb_to_gtdb_taxonomy_{sample}.tsv"
     resources:
         runtime="00:10:00",
-        mem_mb="5000",
+        mem_mb="10000",
     shell:
         """
         # convert sgb to gtdb taxonomy
@@ -159,8 +160,8 @@ rule merge_metaphlan_profiles:
     benchmark:
         "benchmark/02_READ_BASED_TAXONOMY/merge_metaphlan_profiles.tsv"
     resources:
-        runtime="00:01:00",
-        mem_mb="1000",
+        runtime="00:10:00",
+        mem_mb="10000",
     shell:
         """
         # merge metaphlan profiles
@@ -192,7 +193,7 @@ rule metaphlan_count_features:
         "benchmark/02_READ_BASED_TAXONOMY/count_metaphlan_features.tsv"
     resources:
         runtime="00:10:00",
-        mem_mb="1000",
+        mem_mb="10000",
     shell:
         """
         # count metaphlan species
@@ -228,7 +229,7 @@ rule metaphlan_alpha_diversity:
         "benchmark/02_READ_BASED_TAXONOMY/metaphlan_alpha_diversity.tsv"
     resources:
         runtime="00:10:00",
-        mem_mb="1000",
+        mem_mb="10000",
     shell:
         """
         # calculate alpha diversity using MetaPhlan4 script
@@ -265,7 +266,7 @@ rule metaphlan_beta_diversity:
         "benchmark/02_READ_BASED_TAXONOMY/metaphlan_beta_diversity.tsv"
     resources:
         runtime="00:10:00",
-        mem_mb="1000",
+        mem_mb="10000",
     shell:
         """
         # calculate beta diversity using MetaPhlan4 script
@@ -285,9 +286,12 @@ rule metaphlan_taxa_reduction:
     input:
         results + "02_READ_BASED_TAXONOMY/metaphlan_merged_profiles.tsv",
     output:
-        species=results + "02_READ_BASED_TAXONOMY/metaphlan_merged_profiles_species.tsv",
-        genus=results + "02_READ_BASED_TAXONOMY/metaphlan_merged_profiles_genus.tsv",
-        phylum=results + "02_READ_BASED_TAXONOMY/metaphlan_merged_profiles_phylum.tsv",
+        species=results
+        + "02_READ_BASED_TAXONOMY/03_taxa_reduction/metaphlan_merged_profiles_species.tsv",
+        genus=results
+        + "02_READ_BASED_TAXONOMY/03_taxa_reduction/metaphlan_merged_profiles_genus.tsv",
+        phylum=results
+        + "02_READ_BASED_TAXONOMY/03_taxa_reduction/metaphlan_merged_profiles_phylum.tsv",
     # conda:
     #     "../envs/scripts.yml"
     container:
@@ -295,7 +299,7 @@ rule metaphlan_taxa_reduction:
     benchmark:
         "benchmark/02_READ_BASED_TAXONOMY/metaphlan_taxa_reduction.tsv"
     resources:
-        runtime="00:01:00",
-        mem_mb="1000",
+        runtime="00:10:00",
+        mem_mb="10000",
     script:
         "../scripts/02_metaphlan_taxa_reduction.py"

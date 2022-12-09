@@ -50,7 +50,7 @@ rule panphlan_download:
     benchmark:
         "benchmark/05_READ_BASED_PANGENOME/download_pangenome_{species}.tsv"
     resources:
-        runtime="01:00:00",
+        runtime="00:10:00",
         mem_mb="10000",
     shell:
         """
@@ -80,8 +80,8 @@ rule panphlan_map:
     benchmark:
         "benchmark/05_READ_BASED_PANGENOME/panphlan_map_{species}_{sample}.tsv"
     resources:
-        runtime="04:00:00",
-        mem_mb="10000",
+        runtime=config["read_pangenome"]["panphlan_runtime"],
+        mem_mb=config["read_pangenome"]["panphlan_memory"],
     threads: config["read_pangenome"]["panphlan_threads"]
     shell:
         """
@@ -106,7 +106,7 @@ rule panphlan_profile:
             sample=samples,
         ),
     output:
-        results + "05_READ_BASED_PANGENOME/01_panphlan/{species}_profile.csv",
+        results + "05_READ_BASED_PANGENOME/01_panphlan/{species}_profile.tsv",
     params:
         in_dir=results + "05_READ_BASED_PANGENOME/01_panphlan/{species}",
         extra_args=config["read_pangenome"]["panphlan_profile_arguments"],
@@ -117,7 +117,7 @@ rule panphlan_profile:
     benchmark:
         "benchmark/05_READ_BASED_PANGENOME/panphlan_map_{species}.tsv"
     resources:
-        runtime="01:00:00",
+        runtime="00:10:00",
         mem_mb="10000",
     shell:
         """

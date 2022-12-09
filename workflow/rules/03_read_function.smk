@@ -47,18 +47,18 @@ rule download_humann_db:
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/download_humann_db.tsv"
     resources:
-        runtime="04:00:00",
-        mem_mb="10000",
+        runtime="08:00:00",
+        mem_mb="100000",
     shell:
         """
         # download humann chocophlan database
-        humann_databases --download chocophlan full {params.humann_dir}
+        # humann_databases --download chocophlan full {params.humann_dir} --update-config no
 
         # download humann uniref90 database
-        humann_databases --download uniref uniref90_diamond {params.humann_dir}
+        humann_databases --download uniref uniref90_diamond {params.humann_dir} --update-config no
 
         # download humann utility mapping database
-        humann_databases --download utility_mapping full {params.humann_dir}
+        humann_databases --download utility_mapping full {params.humann_dir} --update-config no
         """
 
 
@@ -73,7 +73,7 @@ rule merge_read_pairs:
         "benchmark/03_READ_BASED_FUNCTION/merge_pairs_{sample}.tsv"
     resources:
         runtime="00:10:00",
-        mem_mb="5000",
+        mem_mb="10000",
     shell:
         """
         # merge read pairs for humann
@@ -97,6 +97,7 @@ rule humann:
         cpa_dir=resources + "humann/chocophlan/",
         uniref_dir=resources + "humann/uniref/",
         map_dir=resources + "humann/utility_mapping/",
+        extra_args=config["read_function"]["humann_arguments"],
     # conda:
     #     "../envs/humann:3.6--pyh7cba7a3_1.yml"
     container:
@@ -104,8 +105,8 @@ rule humann:
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/humann_{sample}.tsv"
     resources:
-        runtime="48:00:00",
-        mem_mb="50000",
+        runtime=config["read_function"]["humann_runtime"],
+        mem_mb=config["read_function"]["humann_memory"],
     threads: config["read_function"]["humann_threads"]
     shell:
         """
@@ -146,7 +147,7 @@ rule get_counts_from_humann_logs:
         "benchmark/03_READ_BASED_FUNCTION/get_counts_from_humann_logs.tsv"
     resources:
         runtime="00:10:00",
-        mem_mb="1000",
+        mem_mb="10000",
     shell:
         """
         # count reads aligned to species
@@ -169,7 +170,7 @@ rule humann_regroup_gene_families:
         "benchmark/03_READ_FUNCTION/humann_regoup_table_{sample}.tsv"
     resources:
         runtime="00:10:00",
-        mem_mb="5000",
+        mem_mb="10000",
     shell:
         """
         # regroup gene families
@@ -207,7 +208,7 @@ rule humann_join_unnormalized_tables:
         "benchmark/03_READ_BASED_FUNCTION/humann_join_unnormalized.tsv"
     resources:
         runtime="00:10:00",
-        mem_mb="1000",
+        mem_mb="10000",
     shell:
         """
         # run join tables
@@ -247,7 +248,7 @@ rule humann_renorm_tables:
         "benchmark/03_READ_BASED_FUNCTION/humann_renorm_{sample}.tsv"
     resources:
         runtime="01:00:00",
-        mem_mb="5000",
+        mem_mb="10000",
     shell:
         """
         # run renorm tables
@@ -301,7 +302,7 @@ rule humann_join_normalized_tables:
         "benchmark/03_READ_BASED_FUNCTION/humann_join_normalized.tsv"
     resources:
         runtime="00:10:00",
-        mem_mb="1000",
+        mem_mb="10000",
     shell:
         """
         # run join tables
@@ -343,25 +344,25 @@ rule humann_count_features:
         "benchmark/03_READ_BASED_FUNCTION/humann_count_features.tsv"
     resources:
         runtime="00:10:00",
-        mem_mb="1000",
+        mem_mb="10000",
     shell:
         """
         # count features
-        python {params.script} --input {params.input.gf} \
+        python {params.script} --input {input.gf} \
         --output {output.gf} \
         --reduce-sample-name \
         --ignore-un-features \
         --ignore-stratification
 
         # count features
-        python {params.script} --input {params.input.ecs} \
+        python {params.script} --input {input.ecs} \
         --output {output.ecs} \
         --reduce-sample-name \
         --ignore-un-features \
         --ignore-stratification
 
         # count features
-        python {params.script} --input {params.input.pa} \
+        python {params.script} --input {input.pa} \
         --output {output.pa} \
         --reduce-sample-name \
         --ignore-un-features \
@@ -389,7 +390,7 @@ rule humann_join_feature_counts_tables:
         "benchmark/03_READ_BASED_FUNCTION/humann_join_feature_counts_tables.tsv"
     resources:
         runtime="00:10:00",
-        mem_mb="1000",
+        mem_mb="10000",
     shell:
         """
         # run join tables

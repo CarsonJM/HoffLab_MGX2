@@ -34,12 +34,11 @@ report: "../report/workflow.rst"
 rule sample2markers:
     input:
         results + "02_READ_BASED_TAXONOMY/01_metaphlan/{sample}.sam.bz2",
+        spa_db=resources + "metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103.pkl",
     output:
         results + "04_READ_BASED_STRAIN/01_consensus_markers/{sample}.pkl",
     params:
         out_dir=results + "04_READ_BASED_STRAIN/01_consensus_markers/",
-        extra_args=config["read_strain"]["samples2markers_arguments"],
-        mpa=resources + "metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103.pkl",
     # conda:
     #     "../envs/humann:3.6--pyh7cba7a3_1.yml"
     container:
@@ -47,9 +46,9 @@ rule sample2markers:
     benchmark:
         "benchmark/04_READ_BASED_STRAIN/sample2markers_{sample}.tsv"
     resources:
-        runtime="08:00:00",
-        mem_mb="100000",
-    threads: config["read_strain"]["samples2markers_threads"]
+        runtime=config["read_strain"]["strainphlan_runtime"],
+        mem_mb=config["read_strain"]["strainphlan_memory"],
+    threads: config["read_strain"]["strainphlan_threads"]
     shell:
         """
         # combine paired end reads
@@ -57,8 +56,7 @@ rule sample2markers:
         -o {params.out_dir} \
         --nprocs {threads} \
         --input_format bz2 \
-        --database {params.mpa} \
-        {params.extra_args}
+        --database {input.spa_db}
         """
 
 
@@ -69,11 +67,11 @@ rule strainphlan_clades:
             results + "04_READ_BASED_STRAIN/01_consensus_markers/{sample}.pkl",
             sample=samples,
         ),
+        spa_db=resources + "metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103.pkl",
     output:
         results + "04_READ_BASED_STRAIN/02_clades/strainphlan_clades",
     params:
         out_dir=results + "04_READ_BASED_STRAIN/02_clades/",
-        spa_db=resources + "metaphlan/mpa_v30_CHOCOPhlAn_201901.pkl",
     # conda:
     #     "../envs/humann:3.6--pyh7cba7a3_1.yml"
     container:
@@ -81,104 +79,84 @@ rule strainphlan_clades:
     benchmark:
         "benchmark/04_READ_BASED_STRAIN/strainphlan_clades.tsv"
     resources:
-        runtime="01:00:00",
-        mem_mb="1000",
+        runtime=config["read_strain"]["strainphlan_runtime"],
+        mem_mb=config["read_strain"]["strainphlan_memory"],
+    threads: config["read_strain"]["strainphlan_threads"]
     shell:
         """
         # combine paired end reads
         strainphlan \
         --samples {input} \
-        --database {params.spa_db} \
+        --database {input.spa_db} \
+        --nprocs {threads} \
         --output_dir {params.out_dir} \
         --print_clades_only > {output}
         """
 
 
-# # identify all clades for strainphlan
-# checkpoint order_clades_by_relab:
-#     input:
-#         results + "04_READ_BASED_PHYLOGENY/02_clades/strainphlan_clades"
-#     output:
-#         results + "04_READ_BASED_PHYLOGENY/02_clades/strainphlan_clades_ordered_by_relab.tsv"
-#     log:
-#         results + "00_LOGS/04_strainphlan_order_clades_by_relab.log"
-#     params:
-#         out_dir=results + "04_READ_BASED_PHYLOGENY/02_clades/",
-#         spa_db=resources + "metaphlan/mpa_v30_CHOCOPhlAn_201901.pkl",
-#     conda:
-#         "../envs/biobakery_workflows.yml"
-#     container:
-#         "docker://biobakery/workflows:3.0.0.a.7"
-#     benchmark:
-#         "benchmark/04_READ_BASED_PHYLOGENY/strainphlan_clades.tsv"
-#     resources:
-#         runtime="01:00:00",
-#         mem_mb="1000",
-#     notebook:
-# # extract markers for each clade
-# rule extract_markers:
-#     output:
-#         results + "04_READ_BASED_PHYLOGENY/02_db_markers/s__Bacteroides_caccae.fna"
-#     log:
-#         results + "00_LOGS/04_extract_markers.s__Bacteroides_caccae.log"
-#     params:
-#         out_dir=results + "04_READ_BASED_PHYLOGENY/02_db_markers/",
-#         spa_db=resources + "metaphlan/mpa_v30_CHOCOPhlAn_201901.pkl",
-#     conda:
-#         "../envs/humann.yml"
-#     container:
-#         "docker://quay.io/biocontainers/humann:3.0.1--pyh5e36f6f_0"
-#     benchmark:
-#         "benchmark/04_READ_BASED_PHYLOGENY/extract_markers_s__Bacteroides_caccae.tsv"
-#     resources:
-#         runtime="00:10:00",
-#         partition="ckpt",
-#         mem_mb="1000",
-#     shell:
-#         """
-#         # extract markers
-#         extract_markers.py --database {params.spa_db} -c s__Bacteroides_caccae -o {params.out_dir}
-#         """
-# # def determine_clades(wildcards):
-# #     clades = []
-# #     with checkpoints.strainphlan_clades.get(**wildcards).output[0].open() as file:
-# #         for line in file:
-# #             if "s__" in line:
-# #                 clades.add(line.strip().split("\t")[1].split(": in ")[0])
-# #     return expand(results + "04_READ_BASED_PHYLOGENY/04_strainphlan/{clade}.info", clade=clades)
-# # run strainphlan
-# rule strainphlan:
-#     input:
-#         pkl=expand(results + "04_READ_BASED_PHYLOGENY/01_consensus_markers/{sample}.pkl", sample=samples),
-#         db_markers=results + "04_READ_BASED_PHYLOGENY/02_db_markers/s__Bacteroides_caccae.fna"
-#     output:
-#         results + "04_READ_BASED_PHYLOGENY/04_strainphlan/s__Bacteroides_caccae.info"
-#     log:
-#         results + "00_LOGS/04_strainphlan.s__Bacteroides_caccae.log"
-#     params:
-#         out_dir=results + "04_READ_BASED_PHYLOGENY/04_strainphlan/",
-#         spa_db=resources + "metaphlan/mpa_v30_CHOCOPhlAn_201901.pkl",
-#     conda:
-#         "../envs/humann.yml"
-#     container:
-#         "docker://quay.io/biocontainers/humann:3.0.1--pyh5e36f6f_0"
-#     benchmark:
-#         "benchmark/04_READ_BASED_PHYLOGENY/strainphlan_s__Bacteroides_caccae.tsv"
-#     resources:
-#         runtime="04:00:00",
-#         partition="ckpt",
-#         mem_mb="10000",
-#     threads:
-#         config["read_phylogeny"]["strainphlan_threads"]
-#     shell:
-#         """
-#         # combine paired end reads
-#         strainphlan \
-#         --database {params.spa_db} \
-#         -s {input.pkl} \
-#         -m {input.db_markers} \
-#         -o {params.out_dir} \
-#         -n {threads} \
-#         -c s__Bacteroides_caccae \
-#         --mutation_rates
-#         """
+# extract markers
+rule extract_markers:
+    message:
+        "Extracting strainphlan markers for {wildcards.species}"
+    input:
+        resources + "metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103.pkl",
+    output:
+        resources + "strainphlan/markers/{species}.fna",
+    params:
+        out_dir=resources + "strainphlan/markers/",
+    # conda:
+    #     "../envs/humann:3.6--pyh7cba7a3_1.yml"
+    container:
+        "docker://quay.io/biocontainers/humann:3.6--pyh7cba7a3_1"
+    benchmark:
+        "benchmark/04_READ_BASED_STRAIN/extract_markers_{species}.tsv"
+    resources:
+        runtime="01:00:00",
+        mem_mb="10000",
+    threads: config["read_strain"]["strainphlan_threads"]
+    shell:
+        """
+        # combine paired end reads
+        extract_markers.py \
+        --database {input} \
+        --clades {wildcards.species} \
+        --output_dir {params.out_dir}
+        """
+
+
+# run strainphlan
+rule strainphlan:
+    input:
+        pkl=expand(
+            results + "04_READ_BASED_STRAIN/01_consensus_markers/{sample}.pkl",
+            sample=samples,
+        ),
+        db_markers=resources + "strainphlan/markers/{species}.fna",
+        spa_db=resources + "metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103.pkl",
+    output:
+        results + "04_READ_BASED_STRAIN/03_strainphlan/{species}.info",
+    params:
+        out_dir=results + "04_READ_BASED_STRAIN/03_strainphlan/",
+        species=config["read_strain"]["strainphlan_species"],
+    # conda:
+    #     "../envs/humann:3.6--pyh7cba7a3_1.yml"
+    container:
+        "docker://quay.io/biocontainers/humann:3.6--pyh7cba7a3_1"
+    benchmark:
+        "benchmark/04_READ_BASED_STRAIN/strainphlan_{species}.tsv"
+    resources:
+        runtime=config["read_strain"]["strainphlan_runtime"],
+        mem_mb=config["read_strain"]["strainphlan_memory"],
+    threads: config["read_strain"]["strainphlan_threads"]
+    shell:
+        """
+        # combine paired end reads
+        strainphlan \
+        --database {input.spa_db} \
+        -s {input.pkl} \
+        -m {input.db_markers} \
+        -o {params.out_dir} \
+        -n {threads} \
+        -c {params.species} \
+        --mutation_rates
+        """

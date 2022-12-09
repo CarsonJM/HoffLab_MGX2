@@ -21,35 +21,46 @@ include_read_preprocessing_module: True
 read_preprocessing:
   fastp_arguments: "--disable_adapter_trimming --dedup --correction --overrepresentation_analysis"
   fastp_threads: 8
+  fastp_runtime: "00:15:00"
+  fastp_memory: "10000"
   kneaddata_arguments: ""
-  kneaddata_threads: 8
+  kneaddata_threads: 16
+  kneaddata_runtime: "01:00:00"
+  kneaddata_memory: "10000"
 
 ### Read-based taxonomy ###
 include_read_taxonomy_module: True
 read_taxonomy:
   metaphlan_arguments: "--unclassified_estimation"
-  metaphlan_threads: 8
   alpha_diversity: "shannon"
   beta_diversity: "bray-curtis"
+  metaphlan_threads: 16
+  metaphlan_runtime: "01:00:00"
+  metaphlan_memory: "50000"
 
 ### Read-based function ###
 include_read_function_module: True
 read_function:
   humann_arguments: ""
   humann_threads: 8
+  humann_runtime: "12:00:00"
+  humann_memory: "100000"
 
 ### Read-based strain analysis ###
-include_read_strain_module: False
+include_read_strain_module: True
 read_strain:
-  samples2markers_arguments: ""
-  samples2markers_threads: 16
+  strainphlan_species: ["t__SGB8007_group"]
   strainphlan_arguments: ""
-  strainphlan_threads: 8
+  strainphlan_threads: 16
+  strainphlan_runtime: "04:00:00"
+  strainphlan_memory: "100000"
 
 ### Read-based pangenome analysis ###
 include_read_pangenome_module: True
 read_pangenome:
-  pangenome_species: ["Streptococcus_mitis"]
+  pangenome_species: ["Streptococcus_mitis", "Streptococcus_salivarius"]
   panphlan_map_arguments: ""
   panphlan_profile_arguments: ""
-  panphlan_threads: 8
+  panphlan_threads: 16
+  panphlan_runtime: "01:00:00"
+  panphlan_memory: "10000"
