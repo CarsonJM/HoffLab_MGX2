@@ -29,6 +29,7 @@ report: "../report/workflow.rst"
 # -------------------------------------
 localrules:
     merge_read_pairs,
+    humann_count_features,
 
 
 # -----------------------------------------------------
@@ -37,7 +38,9 @@ localrules:
 # download humann database
 rule download_humann_db:
     output:
-        resources + "uniref/uniref90_201901.dmnd",
+        uniref=resources + "humann/uniref/uniref90_201901b_full.dmnd",
+        chocophlan=resources + "humann/chocophlan/alaS.centroids.v201901_v31.ffn.gz",
+        utility_mappying=resources + "humann/utility_mapping/map_ec_name.txt.gz",
     params:
         humann_dir=resources + "humann/",
     # conda:
@@ -52,7 +55,7 @@ rule download_humann_db:
     shell:
         """
         # download humann chocophlan database
-        # humann_databases --download chocophlan full {params.humann_dir} --update-config no
+        humann_databases --download chocophlan full {params.humann_dir} --update-config no
 
         # download humann uniref90 database
         humann_databases --download uniref uniref90_diamond {params.humann_dir} --update-config no
@@ -86,7 +89,9 @@ rule humann:
     input:
         seq=results + "03_READ_BASED_FUNCTION/01_merge_pairs/{sample}.fastq.gz",
         mpa=results + "02_READ_BASED_TAXONOMY/01_metaphlan/{sample}_profile.tsv",
-        humann_db=resources + "uniref/uniref90_201901.dmnd",
+        uniref=resources + "humann/uniref/uniref90_201901b_full.dmnd",
+        chocophlan=resources + "humann/chocophlan/alaS.centroids.v201901_v31.ffn.gz",
+        utility_mappying=resources + "humann/utility_mapping/map_ec_name.txt.gz",
     output:
         gf=results + "03_READ_BASED_FUNCTION/02_humann/{sample}_genefamilies.tsv",
         pa=results + "03_READ_BASED_FUNCTION/02_humann/{sample}_pathabundance.tsv",
@@ -115,15 +120,11 @@ rule humann:
         --output {params.out_dir} \
         --threads {threads} \
         --taxonomic-profile {input.mpa} \
-        --input_format fastq \
         --o-log {output.log} \
         --nucleotide-database {params.cpa_dir} \
         --protein-database {params.uniref_dir} \
         --remove-temp-output \
         {params.extra_args}
-
-        # copy log to logs dir
-        cp {output.log} {log}
         """
 
 
@@ -159,24 +160,25 @@ rule get_counts_from_humann_logs:
 # group gene families at KO level
 rule humann_regroup_gene_families:
     input:
-        results + "03_READ_BASED_FUNCTION/02_humann/{sample}_genefamilies.tsv",
+        level4ec_map=resources + "humann/utility_mapping/map_level4ec_uniref90.txt.gz",
+        humann=results + "03_READ_BASED_FUNCTION/02_humann/{sample}_genefamilies.tsv",
     output:
-        results + "03_READ_FUNCTION/02_humann/{sample}_ecs.tsv",
+        results + "03_READ_BASED_FUNCTION/02_humann/{sample}_ecs.tsv",
     # conda:
     #     "../envs/humann:3.6--pyh7cba7a3_1.yml"
     container:
         "docker://quay.io/biocontainers/humann:3.6--pyh7cba7a3_1"
     benchmark:
-        "benchmark/03_READ_FUNCTION/humann_regoup_table_{sample}.tsv"
+        "benchmark/03_READ_BASED_FUNCTION/humann_regoup_table_{sample}.tsv"
     resources:
         runtime="00:10:00",
         mem_mb="10000",
     shell:
         """
         # regroup gene families
-        humann_regroup_table --input {input} \
+        humann_regroup_table --input {input.humann} \
         --output {output} \
-        --groups uniref90_level4ec
+        --custom {input.level4ec_map}
         """
 
 
@@ -188,7 +190,8 @@ rule humann_join_unnormalized_tables:
             sample=samples,
         ),
         ecs=expand(
-            results + "03_READ_FUNCTION/02_humann/{sample}_ecs.tsv", sample=samples
+            results + "03_READ_BASED_FUNCTION/02_humann/{sample}_ecs.tsv",
+            sample=samples,
         ),
         pa=expand(
             results + "03_READ_BASED_FUNCTION/02_humann/{sample}_pathabundance.tsv",
@@ -196,7 +199,7 @@ rule humann_join_unnormalized_tables:
         ),
     output:
         gf=results + "03_READ_BASED_FUNCTION/unnormalized_genefamilies.tsv",
-        ecs=results + "03_READ_FUNCTION/unnormalized_ecs.tsv",
+        ecs=results + "03_READ_BASED_FUNCTION/unnormalized_ecs.tsv",
         pa=results + "03_READ_BASED_FUNCTION/unnormalized_pathabundance.tsv",
     params:
         in_dir=results + "03_READ_BASED_FUNCTION/02_humann/",
@@ -214,17 +217,17 @@ rule humann_join_unnormalized_tables:
         # run join tables
         humann_join_tables --input {params.in_dir} \
         --output {output.gf} \
-        --file-name genefamilies
+        --file_name genefamilies
 
         # run join tables
         humann_join_tables --input {params.in_dir} \
         --output {output.ecs} \
-        --file-name ecs
+        --file_name ecs
 
         # run join tables
         humann_join_tables --input {params.in_dir} \
         --output {output.pa} \
-        --file-name pathabundance
+        --file_name pathabundance
         """
 
 
@@ -232,12 +235,12 @@ rule humann_join_unnormalized_tables:
 rule humann_renorm_tables:
     input:
         gf=results + "03_READ_BASED_FUNCTION/02_humann/{sample}_genefamilies.tsv",
-        ecs=results + "03_READ_FUNCTION/02_humann/{sample}_ecs.tsv",
+        ecs=results + "03_READ_BASED_FUNCTION/02_humann/{sample}_ecs.tsv",
         pa=results + "03_READ_BASED_FUNCTION/02_humann/{sample}_pathabundance.tsv",
     output:
         gf=results
         + "03_READ_BASED_FUNCTION/04_humann_renorm/{sample}_genefamilies_renorm.tsv",
-        ecs=results + "03_READ_FUNCTION/04_humann_renorm/{sample}_ecs_renorm.tsv",
+        ecs=results + "03_READ_BASED_FUNCTION/04_humann_renorm/{sample}_ecs_renorm.tsv",
         pa=results
         + "03_READ_BASED_FUNCTION/04_humann_renorm/{sample}_pathabundance_renorm.tsv",
     # conda:
@@ -280,7 +283,8 @@ rule humann_join_normalized_tables:
             sample=samples,
         ),
         ecs=expand(
-            results + "03_READ_FUNCTION/04_humann_renorm/{sample}_ecs_renorm.tsv",
+            results
+            + "03_READ_BASED_FUNCTION/04_humann_renorm/{sample}_ecs_renorm.tsv",
             sample=samples,
         ),
         pa=expand(
@@ -290,7 +294,7 @@ rule humann_join_normalized_tables:
         ),
     output:
         gf=results + "03_READ_BASED_FUNCTION/genefamilies_relab.tsv",
-        ecs=results + "03_READ_FUNCTION/ecs_relab.tsv",
+        ecs=results + "03_READ_BASED_FUNCTION/ecs_relab.tsv",
         pa=results + "03_READ_BASED_FUNCTION/pathabundance_relab.tsv",
     params:
         in_dir=results + "03_READ_BASED_FUNCTION/04_humann_renorm/",
@@ -308,17 +312,17 @@ rule humann_join_normalized_tables:
         # run join tables
         humann_join_tables --input {params.in_dir} \
         --output {output.gf} \
-        --file-name genefamilies
+        --file_name genefamilies
 
         # run join tables
         humann_join_tables --input {params.in_dir} \
         --output {output.ecs} \
-        --file-name ecs
+        --file_name ecs
 
         # run join tables
         humann_join_tables --input {params.in_dir} \
         --output {output.pa} \
-        --file-name pathabundance
+        --file_name pathabundance
         """
 
 
@@ -326,12 +330,13 @@ rule humann_join_normalized_tables:
 rule humann_count_features:
     input:
         gf=results + "03_READ_BASED_FUNCTION/genefamilies_relab.tsv",
-        ecs=results + "03_READ_FUNCTION/ecs_relab.tsv",
+        ecs=results + "03_READ_BASED_FUNCTION/ecs_relab.tsv",
         pa=results + "03_READ_BASED_FUNCTION/pathabundance_relab.tsv",
     output:
         gf=results
         + "03_READ_BASED_FUNCTION/05_humann_feature_counts/genefamilies_relab_counts.tsv",
-        ecs=results + "03_READ_FUNCTION/05_humann_feature_counts/ecs_relab_counts.tsv",
+        ecs=results
+        + "03_READ_BASED_FUNCTION/05_humann_feature_counts/ecs_relab_counts.tsv",
         pa=results
         + "03_READ_BASED_FUNCTION/05_humann_feature_counts/pathabundance_relab_counts.tsv",
     params:
@@ -375,7 +380,8 @@ rule humann_join_feature_counts_tables:
     input:
         gf=results
         + "03_READ_BASED_FUNCTION/05_humann_feature_counts/genefamilies_relab_counts.tsv",
-        ecs=results + "03_READ_FUNCTION/05_humann_feature_counts/ecs_relab_counts.tsv",
+        ecs=results
+        + "03_READ_BASED_FUNCTION/05_humann_feature_counts/ecs_relab_counts.tsv",
         pa=results
         + "03_READ_BASED_FUNCTION/05_humann_feature_counts/pathabundance_relab_counts.tsv",
     output:
@@ -396,5 +402,5 @@ rule humann_join_feature_counts_tables:
         # run join tables
         humann_join_tables --input {params.in_dir} \
         --output {output} \
-        --file-name relab_counts
+        --file_name relab_counts
         """

@@ -54,12 +54,13 @@ def main():
     samples=[]
     with open(args.input) as file_handle:
         for line in file_handle:
-            if 'clade_name' in line:
+            if 'clade_name' in line or "# Gene Family" in line or "# Pathway" in line:
                 # remove RPKs from sample name if included
                 if args.reduce_sample_name:
                     samples=[sample.replace("_Abundance-RPKs","").replace("_genefamilies_Abundance","").replace("_Abundance","").replace("_taxonomic_profile","").replace("_gtdb","") for sample in line.rstrip().split("\t")[1:]]
                 else:
                     samples=line.rstrip().split("\t")[1:]
+                continue
             if "|" in line and args.ignore_stratification:
                 store=False
             else:

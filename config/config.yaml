@@ -42,7 +42,7 @@ read_taxonomy:
 include_read_function_module: True
 read_function:
   humann_arguments: ""
-  humann_threads: 8
+  humann_threads: 16
   humann_runtime: "12:00:00"
   humann_memory: "100000"
 
