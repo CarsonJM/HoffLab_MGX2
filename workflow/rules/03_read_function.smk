@@ -41,6 +41,7 @@ rule download_humann_db:
         uniref=resources + "humann/uniref/uniref90_201901b_full.dmnd",
         chocophlan=resources + "humann/chocophlan/alaS.centroids.v201901_v31.ffn.gz",
         utility_mappying=resources + "humann/utility_mapping/map_ec_name.txt.gz",
+        level4ec_map=resources + "humann/utility_mapping/map_level4ec_uniref90.txt.gz",
     params:
         humann_dir=resources + "humann/",
     # conda:
