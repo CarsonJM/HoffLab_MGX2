@@ -10,10 +10,10 @@ cluster: mkdir -p slurm_logs/`date +"%y-%m-%d"`/{rule} &&
   --parsable
   --export=ALL
 default-resources:
-  - partition=compute
+  - partition=ckpt
   - mem_mb=1000
   - runtime="01:00:00"
-  - account=stf
+  - account=pedslabs
 restart-times: 0
 max-jobs-per-second: 1
 max-status-checks-per-second: 1
