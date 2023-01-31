@@ -50,8 +50,8 @@ rule panphlan_download:
     benchmark:
         "benchmark/05_READ_BASED_PANGENOME/download_pangenome_{species}.tsv"
     resources:
-        runtime="00:10:00",
-        mem_mb="10000",
+        runtime="10m",
+        mem_mb="10GB",
     shell:
         """
         # download panphlan pangenome
@@ -117,8 +117,8 @@ rule panphlan_profile:
     benchmark:
         "benchmark/05_READ_BASED_PANGENOME/panphlan_map_{species}.tsv"
     resources:
-        runtime="00:10:00",
-        mem_mb="10000",
+        runtime="10m",
+        mem_mb="10GB",
     shell:
         """
         # profile based on mapping results

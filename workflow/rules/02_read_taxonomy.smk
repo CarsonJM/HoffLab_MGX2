@@ -55,8 +55,8 @@ rule download_metaphlan_db:
     benchmark:
         "benchmark/02_READ_BASED_TAXONOMY/download_metaphlan_db.tsv"
     resources:
-        runtime="04:00:00",
-        mem_mb="100000",
+        runtime="04h",
+        mem_mb="100GB",
     threads: config["read_taxonomy"]["metaphlan_threads"]
     shell:
         """
@@ -124,8 +124,8 @@ rule sgb_to_gtdb_taxonomy:
     benchmark:
         "benchmark/02_READ_BASED_TAXONOMY/sgb_to_gtdb_taxonomy_{sample}.tsv"
     resources:
-        runtime="00:10:00",
-        mem_mb="10000",
+        runtime="10m",
+        mem_mb="10GB",
     shell:
         """
         # convert sgb to gtdb taxonomy
@@ -160,8 +160,8 @@ rule merge_metaphlan_profiles:
     benchmark:
         "benchmark/02_READ_BASED_TAXONOMY/merge_metaphlan_profiles.tsv"
     resources:
-        runtime="00:10:00",
-        mem_mb="10000",
+        runtime="10m",
+        mem_mb="10GB",
     shell:
         """
         # merge metaphlan profiles
@@ -192,8 +192,8 @@ rule metaphlan_count_features:
     benchmark:
         "benchmark/02_READ_BASED_TAXONOMY/count_metaphlan_features.tsv"
     resources:
-        runtime="00:10:00",
-        mem_mb="10000",
+        runtime="10m",
+        mem_mb="10GB",
     shell:
         """
         # count metaphlan species
@@ -228,8 +228,8 @@ rule metaphlan_alpha_diversity:
     benchmark:
         "benchmark/02_READ_BASED_TAXONOMY/metaphlan_alpha_diversity.tsv"
     resources:
-        runtime="00:10:00",
-        mem_mb="10000",
+        runtime="10m",
+        mem_mb="10GB",
     shell:
         """
         # calculate alpha diversity using MetaPhlan4 script
@@ -265,8 +265,8 @@ rule metaphlan_beta_diversity:
     benchmark:
         "benchmark/02_READ_BASED_TAXONOMY/metaphlan_beta_diversity.tsv"
     resources:
-        runtime="00:10:00",
-        mem_mb="10000",
+        runtime="10m",
+        mem_mb="10GB",
     shell:
         """
         # calculate beta diversity using MetaPhlan4 script
@@ -299,7 +299,7 @@ rule metaphlan_taxa_reduction:
     benchmark:
         "benchmark/02_READ_BASED_TAXONOMY/metaphlan_taxa_reduction.tsv"
     resources:
-        runtime="00:10:00",
-        mem_mb="10000",
+        runtime="10m",
+        mem_mb="10GB",
     script:
         "../scripts/02_metaphlan_taxa_reduction.py"

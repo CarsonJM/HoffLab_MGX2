@@ -111,8 +111,8 @@ rule extract_markers:
     benchmark:
         "benchmark/04_READ_BASED_STRAIN/extract_markers_{species}.tsv"
     resources:
-        runtime="01:00:00",
-        mem_mb="10000",
+        runtime="1h",
+        mem_mb="10GB",
     threads: config["read_strain"]["strainphlan_threads"]
     shell:
         """

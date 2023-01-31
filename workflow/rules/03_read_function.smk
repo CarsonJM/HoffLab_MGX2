@@ -51,8 +51,8 @@ rule download_humann_db:
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/download_humann_db.tsv"
     resources:
-        runtime="08:00:00",
-        mem_mb="100000",
+        runtime="08h",
+        mem_mb="100GB",
     shell:
         """
         # download humann chocophlan database
@@ -76,8 +76,8 @@ rule merge_read_pairs:
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/merge_pairs_{sample}.tsv"
     resources:
-        runtime="00:10:00",
-        mem_mb="10000",
+        runtime="10m",
+        mem_mb="10GB",
     shell:
         """
         # merge read pairs for humann
@@ -148,8 +148,8 @@ rule get_counts_from_humann_logs:
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/get_counts_from_humann_logs.tsv"
     resources:
-        runtime="00:10:00",
-        mem_mb="10000",
+        runtime="10m",
+        mem_mb="10GB",
     shell:
         """
         # count reads aligned to species
@@ -172,8 +172,8 @@ rule humann_regroup_gene_families:
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/humann_regoup_table_{sample}.tsv"
     resources:
-        runtime="00:10:00",
-        mem_mb="10000",
+        runtime="10m",
+        mem_mb="10GB",
     shell:
         """
         # regroup gene families
@@ -211,8 +211,8 @@ rule humann_join_unnormalized_tables:
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/humann_join_unnormalized.tsv"
     resources:
-        runtime="00:10:00",
-        mem_mb="10000",
+        runtime="10m",
+        mem_mb="10GB",
     shell:
         """
         # run join tables
@@ -251,8 +251,8 @@ rule humann_renorm_tables:
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/humann_renorm_{sample}.tsv"
     resources:
-        runtime="01:00:00",
-        mem_mb="10000",
+        runtime="1h",
+        mem_mb="10GB",
     shell:
         """
         # run renorm tables
@@ -306,8 +306,8 @@ rule humann_join_normalized_tables:
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/humann_join_normalized.tsv"
     resources:
-        runtime="00:10:00",
-        mem_mb="10000",
+        runtime="10m",
+        mem_mb="10GB",
     shell:
         """
         # run join tables
@@ -349,8 +349,8 @@ rule humann_count_features:
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/humann_count_features.tsv"
     resources:
-        runtime="00:10:00",
-        mem_mb="10000",
+        runtime="10m",
+        mem_mb="10GB",
     shell:
         """
         # count features
@@ -396,8 +396,8 @@ rule humann_join_feature_counts_tables:
     benchmark:
         "benchmark/03_READ_BASED_FUNCTION/humann_join_feature_counts_tables.tsv"
     resources:
-        runtime="00:10:00",
-        mem_mb="10000",
+        runtime="10m",
+        mem_mb="10GB",
     shell:
         """
         # run join tables
